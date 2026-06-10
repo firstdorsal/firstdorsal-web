@@ -1,0 +1,6 @@
+manifestVersion: "0.1"
+metadata:
+    name: firstdorsal-web
+    description: "Gewerbe-Website firstdorsal IT-Dienstleistungen – statisch, hinter Traefik"
+    version: "0.1.0"
+spec: {}

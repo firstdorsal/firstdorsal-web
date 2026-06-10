@@ -7,8 +7,9 @@ Gewerbe-Website von **firstdorsal IT-Dienstleistungen** (Paul Colin Hennig).
 Der Name **firstdorsal** stammt vom ersten Brustwirbel (*1st dorsal vertebra*)
 einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 
-- **Hell** = Sepia-Papier mit Tusche, **Dunkel** = das Negativ der Tafel;
-  Akzentfarbe Siena (oxidierte Tusche), Token `--sienna` / Utility `text-sienna`
+- **Hell** = warmes Sepia-Papier mit Tusche, **Dunkel** = tiefes
+  Tinten-Schwarzbraun (das Negativ der Tafel); Akzentfarbe Siena (oxidierte,
+  orange-braune Tusche), Token `--brand` / Utility `text-brand`
 - Kursive Serifen-**Anmerkungen** (`annotation`) wie die Beschriftung „1st dorsal",
   letterspaced Versalien-**Labels** (`label-caps`) wie die Film-Credits der Vorlage
 - Nummerierte Abschnitte („1 –", „2 –", …) und Leistungs-„Tafeln" (I–III) wie in
@@ -31,6 +32,23 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
   IntersectionObserver (`.reveal`, nur bei `html.js`, respektiert
   `prefers-reduced-motion`)
 - **Tests:** Vitest + Testing-Library
+
+## Build & Deployment
+
+- **`bash build.sh`** baut das Docker-Image vollständig im Container
+  (Node 22 + pnpm → Astro-Build, Tests laufen im Build mit). Laufzeit-Image:
+  `static-web-server` auf scratch-Basis (`RUNTIME_FLAVOR="-alpine"` für eine
+  Debug-Shell), Konfiguration in `sws.toml`.
+- **`bash deploy.sh`** baut, lädt das Image per SSH/`docker load` auf turing
+  (keine Registry – deployt wird exakt das gebaute Artefakt) und führt dort
+  `mpm compose up` im Checkout unter
+  `/mnt/alpha/manifest/server/public/firstdorsal-web` aus.
+- **GitHub Actions** (`.github/workflows/deploy.yml`) ruft bei jedem Push auf
+  `main` nur `deploy.sh` auf – Pipeline und lokaler Ablauf sind identisch.
+  Benötigt das Repo-Secret `TURING_SSH_KEY`.
+- **mpm-Deployment** in `deployment/` (mows-cli): Traefik-Routing für
+  `firstdorsal.eu` (+ `www`-Redirect), TLS über den DNS-Challenge-Resolver,
+  Container read-only im `rp`-Netz.
 
 ## Befehle
 

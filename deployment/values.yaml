@@ -1,0 +1,6 @@
+# Konfiguration des firstdorsal-web-Deployments (mpm compose).
+hostname: firstdorsal.eu
+# Das Image wird von deploy.sh per docker load auf den Host gebracht –
+# es gibt keine Registry, daher pull_policy: never im Template.
+image: firstdorsal-web
+tag: latest

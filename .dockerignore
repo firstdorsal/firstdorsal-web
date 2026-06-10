@@ -1,0 +1,8 @@
+.git
+.github
+.astro
+.vscode
+node_modules
+dist
+deployment
+*.md

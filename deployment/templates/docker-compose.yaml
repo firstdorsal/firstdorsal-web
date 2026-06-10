@@ -1,0 +1,31 @@
+services:
+    firstdorsal-web:
+        container_name: firstdorsal-web
+        image: "{{ .image }}:{{ .tag }}"
+        # Image kommt per docker load (deploy.sh), nicht aus einer Registry.
+        pull_policy: never
+        restart: always
+        read_only: true
+        networks:
+            rp:
+        security_opt:
+            - no-new-privileges:true
+        labels:
+            traefik.enable: "true"
+            traefik.docker.network: rp
+            traefik.http.routers.firstdorsal-web.rule: "Host(`{{ .hostname }}`) || Host(`www.{{ .hostname }}`)"
+            traefik.http.routers.firstdorsal-web.entrypoints: "websecure"
+            traefik.http.routers.firstdorsal-web.middlewares: "firstdorsal-web-www"
+            traefik.http.routers.firstdorsal-web.tls.certresolver: "default"
+            traefik.http.routers.firstdorsal-web.tls.domains[0].main: "{{ .hostname }}"
+            traefik.http.routers.firstdorsal-web.tls.domains[0].sans: "*.{{ .hostname }}"
+            # www -> Apex, dauerhaft (301).
+            traefik.http.middlewares.firstdorsal-web-www.redirectregex.regex: "^https://www\\.{{ .hostname }}/(.*)"
+            traefik.http.middlewares.firstdorsal-web-www.redirectregex.replacement: "https://{{ .hostname }}/$${1}"
+            traefik.http.middlewares.firstdorsal-web-www.redirectregex.permanent: "true"
+            traefik.http.services.firstdorsal-web.loadbalancer.server.port: "80"
+
+networks:
+    rp:
+        external: true
+        name: rp

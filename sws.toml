@@ -1,0 +1,19 @@
+# Konfiguration des static-web-server im Container (wird im Image nach
+# /etc/sws.toml kopiert). Traefik terminiert TLS davor; hier wird nur
+# HTTP auf Port 80 im Container-Netz gesprochen.
+[general]
+# Dual-Stack: "::" nimmt IPv6 und (via v4-mapped) IPv4 an.
+host = "::"
+port = 80
+root = "/public"
+log-level = "warn"
+
+# Sicherheits- und Cache-Header, Kompression für alle gängigen Verfahren.
+security-headers = true
+cache-control-headers = true
+compression = true
+compression-static = true
+directory-listing = false
+
+# /health für Deployment-Checks (taucht nicht im Log auf).
+health = true
