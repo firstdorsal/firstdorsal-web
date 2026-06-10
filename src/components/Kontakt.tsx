@@ -12,6 +12,8 @@ const texte = {
     titelNach: '.',
     text: 'Eine kurze Mail genügt – Sie bekommen binnen 24 Stunden eine fundierte Antwort. Keine Warteschleife, kein Ticketsystem, keine Telefontermine: Alles wird schriftlich geklärt – dokumentiert, nachvollziehbar und in Ihrem Tempo.',
     fakten: 'Erstberatung kostenlos · Festpreis oder transparenter Aufwand',
+    probono:
+      'Für gemeinnützige Vereine setzen wir jedes Jahr ein Projekt pro bono um – fragen Sie einfach an.',
   },
   en: {
     anmerkung: '4 – Consultation',
@@ -20,6 +22,8 @@ const texte = {
     titelNach: '.',
     text: 'A short email is all it takes – you will get a well-founded reply within 24 hours. No hold music, no ticket system, no phone appointments: everything is handled in writing – documented, traceable and at your pace.',
     fakten: 'Free initial consultation · fixed price or transparent effort',
+    probono:
+      'Each year we take on one pro bono project for a non-profit – just ask.',
   },
 }
 
@@ -60,6 +64,7 @@ export function Kontakt({ lang = 'de' }: { lang?: Lang }) {
         <p className="mt-8 font-mono text-xs text-muted-foreground">
           {t.fakten}
         </p>
+        <p className="annotation mx-auto mt-6 max-w-md text-sm">{t.probono}</p>
       </div>
     </section>
   )

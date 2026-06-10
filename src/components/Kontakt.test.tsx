@@ -18,6 +18,13 @@ describe('Kontakt', () => {
     ).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
   })
 
+  it('erwähnt das Pro-bono-Angebot für Vereine', () => {
+    render(<Kontakt />)
+    expect(
+      screen.getByText(/gemeinnützige Vereine.*pro bono/),
+    ).toBeInTheDocument()
+  })
+
   it('rendert auf Englisch mit übersetzter Überschrift', () => {
     render(<Kontakt lang="en" />)
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
