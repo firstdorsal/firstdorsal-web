@@ -16,6 +16,11 @@ const {
   title = 'firstdorsal · IT-Dienstleistungen',
   description = 'firstdorsal IT-Dienstleistungen, Augsburg – Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur.',
 } = Astro.props
+
+// Absolute URLs für Canonical und Social-Media-Vorschauen (Discord, Signal
+// & Co. brauchen ein absolutes og:image).
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const ogImage = new URL('/og.png', Astro.site)
 ---
 
 <!doctype html>
@@ -23,12 +28,27 @@ const {
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href={canonical} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <!-- Die Seite bringt ihren eigenen Dark Mode mit – Dark Reader soll
+         nicht zusätzlich umfärben. -->
+    <meta name="darkreader-lock" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="firstdorsal IT-Dienstleistungen" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="firstdorsal – Das Rückgrat Ihrer IT." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
     <title>{title}</title>
     <!-- Theme vor dem ersten Paint setzen (verhindert Flackern); html.js
          schaltet die Scroll-Einblendungen frei (Fallback ohne JS: alles

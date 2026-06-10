@@ -25,6 +25,8 @@
    Sepia-Papier mit Tusche, Dunkel = tiefes Tinten-Schwarzbraun (das Negativ der
    Tafel). Akzent (--brand): Siena – oxidierte, orange-braune Tusche. */
 :root {
+  /* Browser-UI (Scrollbalken, Formularelemente) folgt dem aktiven Theme. */
+  color-scheme: light;
   --radius: 0.25rem;
   --background: oklch(0.955 0.016 88);
   --foreground: oklch(0.28 0.028 45);
@@ -48,6 +50,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.15 0.008 45);
   --foreground: oklch(0.915 0.018 85);
   --card: oklch(0.19 0.01 48);
