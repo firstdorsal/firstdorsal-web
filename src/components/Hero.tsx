@@ -12,14 +12,14 @@ export function Hero() {
   return (
     <section className="mx-auto grid max-w-6xl gap-12 px-6 pt-16 pb-20 sm:pt-24 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
       <div>
-        <p className="anim-rise label-caps text-sienna">
+        <p className="anim-rise label-caps text-brand">
           IT-Dienstleistungen · Augsburg
         </p>
         <h1
           className="anim-rise mt-6 max-w-3xl font-serif text-5xl/[1.06] font-semibold tracking-tight text-balance sm:text-7xl/[1.05] lg:text-8xl/[1.04]"
           style={delay(90)}
         >
-          Das <em className="text-sienna">Rückgrat</em> Ihrer IT.
+          Das <em className="text-brand">Rückgrat</em> Ihrer IT.
         </h1>
         <p
           className="anim-rise mt-7 max-w-xl text-lg/relaxed text-muted-foreground"

@@ -10,7 +10,7 @@ describe('Vorgehen', () => {
       .getAllByRole('heading', { level: 3 })
       .map((h) => h.textContent)
     expect(schritte).toEqual([
-      'Erstgespräch',
+      'Erstkontakt',
       'Analyse & Angebot',
       'Umsetzung',
       'Übergabe & Betrieb',

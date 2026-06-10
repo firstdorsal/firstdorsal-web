@@ -41,7 +41,7 @@ function Vertebra({ x, y, r, brand, i }: VertebraProps) {
     <g
       data-vertebra
       transform={`translate(${x} ${y}) rotate(${r})`}
-      className={brand ? 'text-sienna' : 'text-foreground/75'}
+      className={brand ? 'text-brand' : 'text-foreground/75'}
       style={{ '--i': i } as CSSProperties}
     >
       {/* Nummerierung im Stil der Tafel: „1 –" */}
@@ -66,7 +66,7 @@ function Vertebra({ x, y, r, brand, i }: VertebraProps) {
         rx={10}
         stroke="currentColor"
         strokeWidth={1.5}
-        fill="var(--sienna)"
+        fill="var(--brand)"
         fillOpacity={brand ? 0.16 : 0.07}
       />
       <path
@@ -101,7 +101,7 @@ function VertebraLabel({ x, y, label, brand, i }: VertebraProps) {
   return (
     <g
       data-vertebra
-      className="text-sienna"
+      className="text-brand"
       style={{ '--i': i } as CSSProperties}
     >
       <path

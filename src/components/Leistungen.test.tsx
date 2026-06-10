@@ -6,14 +6,13 @@ import { Leistungen } from './Leistungen'
 import { ModeToggle } from './ModeToggle'
 
 describe('Leistungen', () => {
-  it('listet die drei Leistungen als Tafeln I–III', () => {
+  it('listet die vier Leistungen mit ihren Titeln', () => {
     render(<Leistungen />)
     expect(screen.getByText('Software, Web & Design')).toBeInTheDocument()
     expect(screen.getByText('IT-Forensik & Audits')).toBeInTheDocument()
     expect(screen.getByText('Betrieb & Infrastruktur')).toBeInTheDocument()
-    expect(screen.getByText('Tafel I')).toBeInTheDocument()
-    expect(screen.getByText('Tafel II')).toBeInTheDocument()
-    expect(screen.getByText('Tafel III')).toBeInTheDocument()
+    expect(screen.getByText('IT-Beratung')).toBeInTheDocument()
+    expect(screen.queryByText(/Tafel I/)).not.toBeInTheDocument()
   })
 
   it('nennt konkrete Leistungspunkte', () => {
@@ -33,6 +32,12 @@ describe('Leistungen', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText('Datensparsam und DSGVO-freundlich, in der EU'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Kubernetes, Container und Self-Hosting'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Zweite Meinung zu Angeboten, Projekten und Bestandssystemen'),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Technische Gutachten und Beweissicherung'),

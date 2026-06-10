@@ -8,8 +8,8 @@ import { SectionHeading } from '@/components/SectionHeading'
 const schritte = [
   {
     anmerkung: 'Anamnese',
-    titel: 'Erstgespräch',
-    text: 'Unverbindlich und kostenlos: Was drückt, was soll erreicht werden, was existiert schon? Sie sprechen von Anfang an mit denen, die es später bauen.',
+    titel: 'Erstkontakt',
+    text: 'Unverbindlich und kostenlos: Was drückt, was soll erreicht werden, was existiert schon? Es antworten die, die es später bauen.',
   },
   {
     anmerkung: 'Diagnose',
@@ -42,7 +42,7 @@ export function Vorgehen() {
           >
             {/* Wirbel-Knoten auf der Linie */}
             <span
-              className="absolute top-0 -left-[3.2rem] grid size-9 place-items-center rounded-md border border-sienna/50 bg-card font-serif text-base italic text-sienna"
+              className="absolute top-0 -left-[3.2rem] grid size-9 place-items-center rounded-md border border-brand/50 bg-card font-serif text-base italic text-brand"
               aria-hidden="true"
             >
               {i + 1}

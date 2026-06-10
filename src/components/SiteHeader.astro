@@ -12,27 +12,13 @@ import { SpineMark } from '@/components/SpineMark'
     <a
       href="/"
       class="flex items-center gap-2.5"
-      aria-label="firstdorsal – zur Startseite"
+      aria-label="firstdorsal IT-Dienstleistungen – zur Startseite"
     >
-      <SpineMark className="h-6 w-6 text-sienna" />
+      <SpineMark className="h-6 w-6 text-brand" />
       <span class="font-serif text-xl font-semibold tracking-tight"
         >firstdorsal</span
       >
     </a>
-    <nav
-      class="label-caps hidden items-center gap-8 text-muted-foreground sm:flex"
-      aria-label="Hauptnavigation"
-    >
-      <a class="transition-colors hover:text-foreground" href="/#leistungen"
-        >Leistungen</a
-      >
-      <a class="transition-colors hover:text-foreground" href="/#vorgehen"
-        >Vorgehen</a
-      >
-      <a class="transition-colors hover:text-foreground" href="/#kontakt"
-        >Kontakt</a
-      >
-    </nav>
     <ModeToggle client:load />
   </div>
 </header>

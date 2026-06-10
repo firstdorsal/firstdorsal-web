@@ -1,13 +1,17 @@
+import { cn } from '@/lib/utils'
+
 // Bildmarke: drei stilisierte Wirbelkörper mit Dornfortsätzen – ein kurzes
 // Stück Wirbelsäule (Namensherkunft „1st dorsal"). Statisch gerendert,
 // Farben über currentColor, damit die Marke Theme und Kontext folgt.
+// Die Klasse spine-mark aktiviert die Hover-Animation (global.css), wenn
+// die Marke in einem Link liegt.
 export function SpineMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
-      className={className}
+      className={cn('spine-mark', className)}
     >
       <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <rect x="7" y="2.5" width="13" height="6.5" rx="2.4" />
