@@ -1,5 +1,5 @@
 ---
-import Layout from '../layouts/Layout.astro'
+import Layout from '../../layouts/Layout.astro'
 import SiteHeader from '@/components/SiteHeader.astro'
 import SiteFooter from '@/components/SiteFooter.astro'
 import { Hero } from '@/components/Hero'
@@ -7,17 +7,15 @@ import { Leistungen } from '@/components/Leistungen'
 import { Vorgehen } from '@/components/Vorgehen'
 import { Kontakt } from '@/components/Kontakt'
 
-// Strukturierte Daten für die lokale Suche (Google: "IT-Dienstleister
-// Augsburg" etc.). Schema.org ProfessionalService mit Anschrift.
-const strukturierteDaten = {
+const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
   name: 'firstdorsal IT-Dienstleistungen',
-  url: 'https://firstdorsal.eu/',
+  url: 'https://firstdorsal.eu/en/',
   image: 'https://firstdorsal.eu/og.png',
   email: 'mail@firstdorsal.eu',
   description:
-    'Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur – aus Augsburg.',
+    'Software development and creative web design, IT forensics with technical expert reports, plus operations & infrastructure – based in Augsburg, Germany.',
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Imhofstraße 12',
@@ -28,23 +26,28 @@ const strukturierteDaten = {
 }
 ---
 
-<Layout lang="de" alternates={{ de: '/', en: '/en/' }}>
+<Layout
+  lang="en"
+  title="firstdorsal · IT services"
+  description="firstdorsal IT services, Augsburg (Germany) – software development and creative web design, IT forensics with technical expert reports, plus operations & infrastructure."
+  alternates={{ de: '/', en: '/en/' }}
+>
   <div class="min-h-svh bg-background text-foreground">
-    <SiteHeader lang="de" />
+    <SiteHeader lang="en" />
 
     <main>
-      <Hero lang="de" />
-      <Leistungen lang="de" />
-      <Vorgehen lang="de" />
-      <Kontakt lang="de" client:load />
+      <Hero lang="en" />
+      <Leistungen lang="en" />
+      <Vorgehen lang="en" />
+      <Kontakt lang="en" client:load />
     </main>
 
-    <SiteFooter lang="de" />
+    <SiteFooter lang="en" />
   </div>
 
   <script
     type="application/ld+json"
     is:inline
-    set:html={JSON.stringify(strukturierteDaten)}
+    set:html={JSON.stringify(structuredData)}
   />
 </Layout>

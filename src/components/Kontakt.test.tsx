@@ -17,4 +17,14 @@ describe('Kontakt', () => {
       screen.getByRole('link', { name: /mail@firstdorsal\.eu/i }),
     ).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
   })
+
+  it('rendert auf Englisch mit übersetzter Überschrift', () => {
+    render(<Kontakt lang="en" />)
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      /Tell us where it\s*hurts\s*\./,
+    )
+    expect(
+      screen.getByRole('button', { name: /Copy email address/i }),
+    ).toBeInTheDocument()
+  })
 })

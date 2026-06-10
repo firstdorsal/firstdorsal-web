@@ -23,4 +23,17 @@ describe('Vorgehen', () => {
       expect(screen.getByText(anmerkung)).toBeInTheDocument()
     }
   })
+
+  it('rendert auf Englisch mit übersetzten Schritten', () => {
+    render(<Vorgehen lang="en" />)
+    const schritte = screen
+      .getAllByRole('heading', { level: 3 })
+      .map((h) => h.textContent)
+    expect(schritte).toEqual([
+      'First contact',
+      'Analysis & quote',
+      'Implementation',
+      'Handover & operations',
+    ])
+  })
 })

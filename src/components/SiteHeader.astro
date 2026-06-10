@@ -1,6 +1,31 @@
 ---
 import { ModeToggle } from '@/components/ModeToggle'
 import { SpineMark } from '@/components/SpineMark'
+import type { Lang } from '@/lib/i18n'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = 'de' } = Astro.props
+
+const texte = {
+  de: {
+    ariaStart: 'firstdorsal IT-Dienstleistungen – zur Startseite',
+    start: '/',
+    wechselHref: '/en/',
+    wechselLabel: 'EN',
+    wechselAria: 'Switch to the English version',
+  },
+  en: {
+    ariaStart: 'firstdorsal IT services – back to start',
+    start: '/en/',
+    wechselHref: '/',
+    wechselLabel: 'DE',
+    wechselAria: 'Zur deutschen Version wechseln',
+  },
+}
+const t = texte[lang]
 ---
 
 <header
@@ -9,16 +34,21 @@ import { SpineMark } from '@/components/SpineMark'
   <div
     class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3"
   >
-    <a
-      href="/"
-      class="flex items-center gap-2.5"
-      aria-label="firstdorsal IT-Dienstleistungen – zur Startseite"
-    >
+    <a href={t.start} class="flex items-center gap-2.5" aria-label={t.ariaStart}>
       <SpineMark className="h-6 w-6 text-brand" />
       <span class="font-serif text-xl font-semibold tracking-tight"
         >firstdorsal</span
       >
     </a>
-    <ModeToggle client:load />
+    <div class="flex items-center gap-5">
+      <a
+        href={t.wechselHref}
+        class="label-caps text-muted-foreground transition-colors hover:text-foreground"
+        aria-label={t.wechselAria}
+      >
+        {t.wechselLabel}
+      </a>
+      <ModeToggle client:load />
+    </div>
   </div>
 </header>

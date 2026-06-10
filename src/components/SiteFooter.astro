@@ -1,3 +1,29 @@
+---
+import type { Lang } from '@/lib/i18n'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = 'de' } = Astro.props
+
+// Impressum und Datenschutzerklärung sind deutsche Rechtstexte und werden
+// bewusst nicht übersetzt; die englische Seite verlinkt sie mit Hinweis.
+const texte = {
+  de: {
+    impressum: 'Impressum',
+    datenschutz: 'Datenschutz',
+    rechtliches: 'Rechtliches',
+  },
+  en: {
+    impressum: 'Legal notice (German)',
+    datenschutz: 'Privacy (German)',
+    rechtliches: 'Legal',
+  },
+}
+const t = texte[lang]
+---
+
 <footer class="border-t border-border/70">
   <div
     class="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
@@ -11,14 +37,14 @@
         mail@firstdorsal.eu
       </a>
     </p>
-    <nav class="flex items-center gap-6" aria-label="Rechtliches">
+    <nav class="flex items-center gap-6" aria-label={t.rechtliches}>
       <a
         class="underline underline-offset-4 hover:text-foreground"
-        href="/impressum">Impressum</a
+        href="/impressum">{t.impressum}</a
       >
       <a
         class="underline underline-offset-4 hover:text-foreground"
-        href="/datenschutz">Datenschutz</a
+        href="/datenschutz">{t.datenschutz}</a
       >
     </nav>
   </div>

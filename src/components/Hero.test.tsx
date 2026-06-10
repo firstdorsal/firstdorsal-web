@@ -33,4 +33,15 @@ describe('Hero', () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/binnen 24\s*h/)).toBeInTheDocument()
   })
+
+  it('rendert auf Englisch mit übersetzter Überschrift und Labels', () => {
+    render(<Hero lang="en" />)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /The\s*backbone\s*of your IT\./,
+    )
+    expect(
+      screen.getAllByRole('link', { name: /Request a project/i }).length,
+    ).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Your inquiry')).toBeInTheDocument()
+  })
 })

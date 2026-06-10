@@ -1,20 +1,53 @@
 import type { CSSProperties } from 'react'
 
+import type { Lang } from '@/lib/i18n'
+
 // Deterministische Wirbelpositionen entlang einer sanften S-Kurve –
 // angelehnt an die anatomische Tafel, die dem Namen zugrunde liegt.
 // Der erste Wirbel (1st dorsal) ist die Anfrage: der erste Schritt, aus dem
 // alles Weitere wächst – darunter hängen die Schichten der Kunden-IT.
 // Wirbel 1 ist als mailto-Link klickbar und nimmt die Metapher wörtlich.
-const vertebrae = [
-  { x: 150, y: 46, r: -12, label: 'Ihre Anfrage', brand: true },
-  { x: 162, y: 114, r: -8, label: 'Code', brand: false },
-  { x: 171, y: 182, r: -4, label: 'Tests', brand: false },
-  { x: 176, y: 250, r: 0, label: 'CI/CD', brand: false },
-  { x: 176, y: 318, r: 3, label: 'Deployment', brand: false },
-  { x: 171, y: 386, r: 7, label: 'Monitoring', brand: false },
-  { x: 162, y: 454, r: 10, label: 'Backups', brand: false },
-  { x: 149, y: 522, r: 13, label: 'Betrieb', brand: false },
+const positionen = [
+  { x: 150, y: 46, r: -12, brand: true },
+  { x: 162, y: 114, r: -8, brand: false },
+  { x: 171, y: 182, r: -4, brand: false },
+  { x: 176, y: 250, r: 0, brand: false },
+  { x: 176, y: 318, r: 3, brand: false },
+  { x: 171, y: 386, r: 7, brand: false },
+  { x: 162, y: 454, r: 10, brand: false },
+  { x: 149, y: 522, r: 13, brand: false },
 ]
+
+const texte = {
+  de: {
+    labels: [
+      'Ihre Anfrage',
+      'Code',
+      'Tests',
+      'CI/CD',
+      'Deployment',
+      'Monitoring',
+      'Backups',
+      'Betrieb',
+    ],
+    aria: 'Projekt anfragen – mail@firstdorsal.eu',
+    bildunterschrift: 'Abb. 1 – Die Anatomie verlässlicher IT.',
+  },
+  en: {
+    labels: [
+      'Your inquiry',
+      'Code',
+      'Tests',
+      'CI/CD',
+      'Deployment',
+      'Monitoring',
+      'Backups',
+      'Operations',
+    ],
+    aria: 'Request a project – mail@firstdorsal.eu',
+    bildunterschrift: 'Fig. 1 – The anatomy of reliable IT.',
+  },
+}
 
 // Staubpunkte wie auf dem alten Filmmaterial (bewusst fest, kein Zufall).
 const specks = [
@@ -34,7 +67,7 @@ const serifItalic: CSSProperties = {
   fontStyle: 'italic',
 }
 
-type VertebraProps = (typeof vertebrae)[number] & { i: number }
+type VertebraProps = (typeof positionen)[number] & { label: string; i: number }
 
 function Vertebra({ x, y, r, brand, i }: VertebraProps) {
   return (
@@ -127,17 +160,22 @@ function VertebraLabel({ x, y, label, brand, i }: VertebraProps) {
 // Statisch gerendert (kein client:*-Direktiv) -> kein JS im Browser; der
 // mailto-Link funktioniert ohne Hydration. Nur der Link und die Bild-
 // unterschrift sind für Screenreader sichtbar, der Rest ist Dekoration.
-export function SpineIllustration({ className }: { className?: string }) {
+export function SpineIllustration({
+  className,
+  lang = 'de',
+}: {
+  className?: string
+  lang?: Lang
+}) {
+  const t = texte[lang]
+  const vertebrae = positionen.map((p, i) => ({ ...p, label: t.labels[i] }))
   const [erster, ...weitere] = vertebrae
 
   return (
     <figure className={className}>
       <svg viewBox="0 0 400 568" fill="none" className="spine-fig w-full">
         {/* Der erste Wirbel ist die Anfrage – und tatsächlich klickbar. */}
-        <a
-          href="mailto:mail@firstdorsal.eu"
-          aria-label="Projekt anfragen – mail@firstdorsal.eu"
-        >
+        <a href="mailto:mail@firstdorsal.eu" aria-label={t.aria}>
           <Vertebra {...erster} i={0} />
           <VertebraLabel {...erster} i={0} />
         </a>
@@ -183,7 +221,7 @@ export function SpineIllustration({ className }: { className?: string }) {
         </g>
       </svg>
       <figcaption className="annotation mt-4 text-center text-sm">
-        Abb. 1 – Die Anatomie verlässlicher IT.
+        {t.bildunterschrift}
       </figcaption>
     </figure>
   )

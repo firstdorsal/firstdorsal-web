@@ -58,6 +58,19 @@ describe('Leistungen', () => {
       screen.getByRole('heading', { level: 2, name: 'Leistungen' }),
     ).toBeInTheDocument()
   })
+
+  it('rendert auf Englisch mit übersetzten Tafeln', () => {
+    render(<Leistungen lang="en" />)
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Services' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('IT Forensics & Audits')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'No vendor lock-in: independent of US corporations like AWS, Google and Microsoft',
+      ),
+    ).toBeInTheDocument()
+  })
 })
 
 describe('ModeToggle', () => {
