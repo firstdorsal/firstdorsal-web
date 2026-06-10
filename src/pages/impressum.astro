@@ -1,0 +1,71 @@
+---
+import Layout from '../layouts/Layout.astro'
+import SiteHeader from '@/components/SiteHeader.astro'
+import SiteFooter from '@/components/SiteFooter.astro'
+---
+
+<Layout
+  title="Impressum · firstdorsal"
+  description="Impressum der firstdorsal IT-Dienstleistungen, Augsburg."
+>
+  <div class="min-h-svh bg-background text-foreground">
+    <SiteHeader />
+
+    <main class="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+      <p class="label-caps text-sienna">Rechtliches</p>
+      <h1
+        class="mt-4 font-serif text-4xl font-semibold tracking-tight sm:text-5xl"
+      >
+        Impressum
+      </h1>
+
+      <section class="mt-12">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          Angaben gemäß § 5 DDG
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          firstdorsal IT-Dienstleistungen<br />
+          Paul Colin Hennig<br />
+          Imhofstraße 12<br />
+          86159 Augsburg<br />
+          Deutschland
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          Kontakt
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          E-Mail:
+          <a
+            class="underline underline-offset-4 hover:text-foreground"
+            href="mailto:mail@firstdorsal.eu">mail@firstdorsal.eu</a
+          >
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Paul Colin Hennig (Anschrift wie oben)
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          Verbraucherstreitbeilegung
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Wir sind nicht bereit oder verpflichtet, an
+          Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle
+          teilzunehmen.
+        </p>
+      </section>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Layout>

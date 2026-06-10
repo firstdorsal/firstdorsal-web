@@ -1,0 +1,71 @@
+---
+// Schriften lokal einbinden – kein CDN. Fraunces „standard" enthält die
+// opsz-Achse (optische Größen für Display-Schnitte), dazu die Kursive für
+// Anmerkungen im Tafel-Stil. Hack kommt per @font-face in global.css.
+import '@fontsource-variable/fraunces/standard.css'
+import '@fontsource-variable/fraunces/standard-italic.css'
+import '@fontsource-variable/libre-franklin'
+import '../styles/global.css'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'firstdorsal · IT-Dienstleistungen',
+  description = 'firstdorsal IT-Dienstleistungen, Augsburg – Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur.',
+} = Astro.props
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>{title}</title>
+    <!-- Theme vor dem ersten Paint setzen (verhindert Flackern); html.js
+         schaltet die Scroll-Einblendungen frei (Fallback ohne JS: alles
+         sichtbar). -->
+    <script is:inline>
+      document.documentElement.classList.add('js')
+      const stored = localStorage.getItem('fd-theme')
+      const dark =
+        stored === 'dark' ||
+        (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      document.documentElement.classList.toggle('dark', dark)
+    </script>
+  </head>
+  <body>
+    <!-- Papierkorn + Vignette der anatomischen Tafel, klicktransparent. -->
+    <div class="texture-overlay" aria-hidden="true"></div>
+    <slot />
+    <script>
+      // Scroll-Einblendungen für .reveal-Elemente. Bei reduzierter Bewegung
+      // sofort sichtbar (CSS deckt das zusätzlich ab).
+      const els = document.querySelectorAll<HTMLElement>('.reveal')
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        els.forEach((el) => el.classList.add('is-visible'))
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible')
+                io.unobserve(entry.target)
+              }
+            }
+          },
+          { threshold: 0.15 },
+        )
+        els.forEach((el) => io.observe(el))
+      }
+    </script>
+  </body>
+</html>

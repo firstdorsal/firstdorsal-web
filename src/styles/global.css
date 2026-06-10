@@ -1,0 +1,253 @@
+@import 'tailwindcss';
+
+/* Klassenbasierter Dark-Mode: .dark am <html> schaltet um (Layout-Inline-Skript). */
+@custom-variant dark (&:is(.dark *));
+
+/* Hack als Monospace lokal einbinden (kein CDN). Fraunces & Libre Franklin kommen
+   über @fontsource-variable (im Layout importiert). */
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Gestaltungskonzept „Anatomische Tafel": Der Name firstdorsal stammt vom ersten
+   Brustwirbel (1st dorsal vertebra) einer anatomischen Zeichnung. Hell = Sepia-
+   Papier mit Tusche, Dunkel = das Negativ der Tafel. Akzent: Siena/oxidierte
+   Tusche. */
+:root {
+  --radius: 0.25rem;
+  --background: oklch(0.955 0.016 88);
+  --foreground: oklch(0.28 0.028 45);
+  --card: oklch(0.972 0.012 90);
+  --card-foreground: oklch(0.28 0.028 45);
+  --popover: oklch(0.972 0.012 90);
+  --popover-foreground: oklch(0.28 0.028 45);
+  --primary: oklch(0.33 0.045 40);
+  --primary-foreground: oklch(0.955 0.016 88);
+  --secondary: oklch(0.905 0.02 85);
+  --secondary-foreground: oklch(0.3 0.03 45);
+  --muted: oklch(0.91 0.018 87);
+  --muted-foreground: oklch(0.48 0.03 48);
+  --accent: oklch(0.89 0.028 75);
+  --accent-foreground: oklch(0.3 0.03 45);
+  --destructive: oklch(0.55 0.19 28);
+  --border: oklch(0.84 0.025 75);
+  --input: oklch(0.84 0.025 75);
+  --ring: oklch(0.55 0.09 45);
+  --sienna: oklch(0.49 0.115 38);
+}
+
+.dark {
+  --background: oklch(0.183 0.012 45);
+  --foreground: oklch(0.915 0.02 85);
+  --card: oklch(0.222 0.014 48);
+  --card-foreground: oklch(0.915 0.02 85);
+  --popover: oklch(0.222 0.014 48);
+  --popover-foreground: oklch(0.915 0.02 85);
+  --primary: oklch(0.72 0.105 55);
+  --primary-foreground: oklch(0.16 0.012 45);
+  --secondary: oklch(0.27 0.016 48);
+  --secondary-foreground: oklch(0.915 0.02 85);
+  --muted: oklch(0.26 0.015 48);
+  --muted-foreground: oklch(0.69 0.028 70);
+  --accent: oklch(0.29 0.02 55);
+  --accent-foreground: oklch(0.915 0.02 85);
+  --destructive: oklch(0.66 0.17 25);
+  --border: oklch(0.915 0.02 85 / 13%);
+  --input: oklch(0.915 0.02 85 / 17%);
+  --ring: oklch(0.62 0.08 55);
+  --sienna: oklch(0.73 0.11 55);
+}
+
+@theme inline {
+  /* Markenschriften: Libre Franklin (Fließtext/Labels), Fraunces (Display,
+     Anmerkungen kursiv), Hack für Monospace. */
+  --font-sans: 'Libre Franklin Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Hack', ui-monospace, 'DejaVu Sans Mono', monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sienna: var(--sienna);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    font-optical-sizing: auto;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* Letterspaced-Versalien wie die Credits der Vorlage („JESSE SPENCER"). */
+@utility label-caps {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Kursive Serifen-Anmerkung wie „1st dorsal" auf der anatomischen Tafel. */
+@utility annotation {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--sienna);
+}
+
+/* Papierkorn + Vignette über der ganzen Seite (fixe, klicktransparente Ebene
+   im Layout). Das Korn ist ein SVG-feTurbulence-Rauschen als Data-URI. */
+.texture-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+.texture-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.05;
+}
+.texture-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 95% at 50% 40%,
+    transparent 58%,
+    oklch(0.32 0.05 40 / 0.12) 100%
+  );
+}
+.dark .texture-overlay::before {
+  mix-blend-mode: soft-light;
+  opacity: 0.14;
+}
+.dark .texture-overlay::after {
+  background: radial-gradient(
+    120% 95% at 50% 40%,
+    transparent 55%,
+    oklch(0 0 0 / 0.4) 100%
+  );
+}
+
+/* Einblendungen beim Laden (rein CSS, ohne JS lauffähig). */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Der erste Wirbel ist ein mailto-Link: dezenter Tusche-Hover statt
+   Web-Blau, Fokus-Ring für Tastaturnutzer. */
+.spine-fig a {
+  cursor: pointer;
+}
+.spine-fig a rect {
+  transition: fill-opacity 0.3s ease;
+}
+.spine-fig a:hover rect,
+.spine-fig a:focus-visible rect {
+  fill-opacity: 0.32;
+}
+.spine-fig a:hover text,
+.spine-fig a:focus-visible text {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.spine-fig a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 6px;
+}
+
+/* Wirbel der Hero-Illustration erscheinen nacheinander wie Tuschestriche.
+   Bewusst nur opacity (keine transforms), damit die SVG-Transform-Attribute
+   der <g>-Elemente nicht überschrieben werden. */
+@keyframes ink-in {
+  from {
+    opacity: 0;
+  }
+}
+.spine-fig [data-vertebra] {
+  animation: ink-in 0.9s ease-out both;
+  animation-delay: calc(110ms * var(--i, 0));
+}
+
+/* Scroll-Einblendungen: nur aktiv, wenn JS verfügbar ist (html.js wird im
+   Layout-Inline-Skript gesetzt) – sonst bleibt alles sichtbar. */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+html.js .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .spine-fig [data-vertebra] {
+    animation: none;
+  }
+  html.js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

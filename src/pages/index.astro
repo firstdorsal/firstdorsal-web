@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro'
+import SiteHeader from '@/components/SiteHeader.astro'
+import SiteFooter from '@/components/SiteFooter.astro'
+import { Hero } from '@/components/Hero'
+import { Leistungen } from '@/components/Leistungen'
+import { Vorgehen } from '@/components/Vorgehen'
+import { Kontakt } from '@/components/Kontakt'
+---
+
+<Layout>
+  <div class="min-h-svh bg-background text-foreground">
+    <SiteHeader />
+
+    <main>
+      <Hero />
+      <Leistungen />
+      <Vorgehen />
+      <Kontakt />
+    </main>
+
+    <SiteFooter />
+  </div>
+</Layout>

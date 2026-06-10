@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro'
+import SiteHeader from '@/components/SiteHeader.astro'
+import SiteFooter from '@/components/SiteFooter.astro'
+---
+
+<Layout
+  title="Datenschutzerklärung · firstdorsal"
+  description="Datenschutzerklärung der firstdorsal IT-Dienstleistungen, Augsburg – keine Cookies, kein Tracking, keine Drittanbieter."
+>
+  <div class="min-h-svh bg-background text-foreground">
+    <SiteHeader />
+
+    <main class="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+      <p class="label-caps text-sienna">Rechtliches</p>
+      <h1
+        class="mt-4 font-serif text-4xl font-semibold tracking-tight sm:text-5xl"
+      >
+        Datenschutzerklärung
+      </h1>
+
+      <section class="mt-12">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          1. Verantwortlicher
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          firstdorsal IT-Dienstleistungen<br />
+          Paul Colin Hennig<br />
+          Imhofstraße 12<br />
+          86159 Augsburg<br />
+          E-Mail:
+          <a
+            class="underline underline-offset-4 hover:text-foreground"
+            href="mailto:mail@firstdorsal.eu">mail@firstdorsal.eu</a
+          >
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          2. Keine Cookies, kein Tracking
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Diese Website verwendet keine Cookies, keine Analyse-Tools und keine
+          Werbenetzwerke. Die Wahl des Farbschemas (hell/dunkel) wird
+          ausschließlich lokal in Ihrem Browser gespeichert
+          (<code class="font-mono text-sm">localStorage</code>) und zu keinem
+          Zeitpunkt an uns oder Dritte übertragen.
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          3. Keine Drittanbieter
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Alle Ressourcen dieser Website – einschließlich Schriften – werden
+          lokal von unserem eigenen Server ausgeliefert. Beim Besuch der Seite
+          werden keine Verbindungen zu Drittanbietern (CDNs, Font-Dienste,
+          externe Skripte) aufgebaut.
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          4. Server-Logdateien
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Beim Aufruf dieser Website verarbeitet der Webserver automatisch
+          technisch notwendige Daten (IP-Adresse, Datum und Uhrzeit des
+          Zugriffs, aufgerufene Ressource, übertragene Datenmenge sowie
+          Browser-Kennung). Diese Daten dienen ausschließlich der Auslieferung
+          der Inhalte, der Stabilität und der Sicherheit des Betriebs
+          (Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO) und werden nach kurzer
+          Zeit automatisch gelöscht. Das Hosting erfolgt auf eigener
+          Infrastruktur in der EU.
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          5. Kontaktaufnahme per E-Mail
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Wenn Sie uns per E-Mail kontaktieren, verarbeiten wir die von Ihnen
+          mitgeteilten Daten (E-Mail-Adresse, Inhalt der Nachricht) zur
+          Bearbeitung Ihrer Anfrage (Rechtsgrundlage: Art. 6 Abs. 1 lit. b
+          DSGVO bei vorvertraglichen Anfragen, im Übrigen Art. 6 Abs. 1 lit. f
+          DSGVO). Die Daten werden gelöscht, sobald sie für die Bearbeitung
+          nicht mehr erforderlich sind und keine gesetzlichen
+          Aufbewahrungspflichten entgegenstehen. Eine Weitergabe an Dritte
+          findet nicht statt.
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          6. Ihre Rechte
+        </h2>
+        <p class="mt-4 leading-relaxed text-muted-foreground">
+          Sie haben gegenüber uns das Recht auf Auskunft (Art. 15 DSGVO),
+          Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO),
+          Einschränkung der Verarbeitung (Art. 18 DSGVO),
+          Datenübertragbarkeit (Art. 20 DSGVO) sowie Widerspruch gegen die
+          Verarbeitung (Art. 21 DSGVO). Außerdem haben Sie das Recht, sich bei
+          einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO);
+          zuständig für uns ist das Bayerische Landesamt für
+          Datenschutzaufsicht (BayLDA), Ansbach.
+        </p>
+      </section>
+
+      <p class="annotation mt-12 text-sm">Stand: Juni 2026</p>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Layout>

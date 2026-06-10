@@ -1,0 +1,20 @@
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+
+import { Kontakt } from './Kontakt'
+
+describe('Kontakt', () => {
+  it('zeigt die Konsultations-Überschrift', () => {
+    render(<Kontakt />)
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      /Erzählen Sie uns, wo es\s*weh tut\s*\./,
+    )
+  })
+
+  it('verlinkt die Kontakt-Mailadresse', () => {
+    render(<Kontakt />)
+    expect(
+      screen.getByRole('link', { name: /mail@firstdorsal\.eu/i }),
+    ).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
+  })
+})
