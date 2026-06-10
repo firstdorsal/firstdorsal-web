@@ -15,7 +15,9 @@ describe('Referenzen', () => {
       expect(link).toHaveAttribute('href', 'https://impedanz.net')
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
     }
-    expect(screen.getByRole('img')).toHaveAttribute(
+    // Das Bild liegt bewusst in einem aria-hidden-Link (der Textlink
+    // darüber ist der zugängliche) – daher hidden: true.
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
       'src',
       '/referenzen/impedanz.webp',
     )
