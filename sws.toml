@@ -8,12 +8,33 @@ port = 80
 root = "/public"
 log-level = "warn"
 
-# Sicherheits- und Cache-Header, Kompression für alle gängigen Verfahren.
+# Sicherheits-Header und Kompression für alle gängigen Verfahren.
 security-headers = true
-cache-control-headers = true
+# Eingebaute Cache-Automatik aus (Standard wäre an!) – die Strategie
+# steht explizit unter [advanced] weiter unten.
+cache-control-headers = false
 compression = true
 compression-static = true
 directory-listing = false
 
 # /health für Deployment-Checks (taucht nicht im Log auf).
 health = true
+
+# Cache-Strategie explizit statt cache-control-headers-Automatik:
+# HTML muss nach jedem Deploy sofort frisch sein (no-cache = immer
+# revalidieren, dank ETag trotzdem billige 304er). Die gehashten
+# Astro-Assets ändern bei jeder Änderung ihren Dateinamen und dürfen
+# deshalb ein Jahr lang unveränderlich gecacht werden.
+[advanced]
+
+[[advanced.headers]]
+source = "**/*"
+headers = { Cache-Control = "no-cache" }
+
+[[advanced.headers]]
+source = "/_astro/**/*"
+headers = { Cache-Control = "public, max-age=31536000, immutable" }
+
+[[advanced.headers]]
+source = "/*.{png,ico,svg}"
+headers = { Cache-Control = "public, max-age=86400" }
