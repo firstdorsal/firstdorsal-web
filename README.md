@@ -38,14 +38,15 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 - **`bash build.sh`** baut das Docker-Image vollständig im Container
   (Node 22 + pnpm → Astro-Build, Tests laufen im Build mit). Laufzeit-Image:
   `static-web-server` auf scratch-Basis (`RUNTIME_FLAVOR="-alpine"` für eine
-  Debug-Shell), Konfiguration in `sws.toml`.
-- **`bash deploy.sh`** baut, lädt das Image per SSH/`docker load` auf turing
-  (keine Registry – deployt wird exakt das gebaute Artefakt) und führt dort
-  `mpm compose up` im Checkout unter
-  `/mnt/alpha/manifest/server/public/firstdorsal-web` aus.
-- **GitHub Actions** (`.github/workflows/deploy.yml`) ruft bei jedem Push auf
-  `main` nur `deploy.sh` auf – Pipeline und lokaler Ablauf sind identisch.
-  Benötigt das Repo-Secret `TURING_SSH_KEY`.
+  Debug-Shell), Konfiguration in `sws.toml`. Mit `PUSH=1` wird nach
+  `ghcr.io/firstdorsal/firstdorsal-web` gepusht.
+- **GitHub Actions** (`.github/workflows/build.yml`) ruft bei jedem Push auf
+  `main` nur `build.sh` auf (mit `PUSH=1`) – Pipeline und lokaler Ablauf
+  sind identisch.
+- **`bash deploy.sh`** deployt manuell auf turing (SSH-Zugang nötig, z. B.
+  aus dem LAN): aktualisiert den Checkout unter
+  `/mnt/alpha/manifest/server/public/firstdorsal-web` und führt
+  `mpm compose up` aus, das das Pipeline-Image aus der Registry zieht.
 - **mpm-Deployment** in `deployment/` (mows-cli): Traefik-Routing für
   `firstdorsal.eu` (+ `www`-Redirect), TLS über den DNS-Challenge-Resolver,
   Container read-only im `rp`-Netz.

@@ -7,14 +7,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Tests laufen im Build mit; ohne grüne Tests entsteht kein Image.
 #
 # Variablen:
-#   IMAGE           Image-Name (Standard: firstdorsal-web)
+#   IMAGE           Image-Name (Standard: ghcr.io/firstdorsal/firstdorsal-web)
 #   TAG             Zusätzlicher Tag (Standard: kurzer Git-Hash)
 #   RUNTIME_FLAVOR  ""=scratch (Standard), "-alpine"=mit Shell zum Debuggen
-#   OUT_TAR         Pfad: Image zusätzlich als tar exportieren (für Deploy)
-IMAGE="${IMAGE:-firstdorsal-web}"
+#   PUSH            "1": Image nach dem Build in die Registry pushen
+IMAGE="${IMAGE:-ghcr.io/firstdorsal/firstdorsal-web}"
 TAG="${TAG:-$(git rev-parse --short HEAD)}"
 RUNTIME_FLAVOR="${RUNTIME_FLAVOR:-}"
-OUT_TAR="${OUT_TAR:-}"
+PUSH="${PUSH:-}"
 
 # Reproduzierbarkeit: Zeitstempel aus dem letzten Commit statt Buildzeit.
 SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
@@ -29,9 +29,10 @@ docker buildx build \
     --load \
     .
 
-if [[ -n "${OUT_TAR}" ]]; then
-    docker save "${IMAGE}:${TAG}" "${IMAGE}:latest" -o "${OUT_TAR}"
-    echo "Image als tar exportiert: ${OUT_TAR}"
+if [[ -n "${PUSH}" ]]; then
+    docker push "${IMAGE}:${TAG}"
+    docker push "${IMAGE}:latest"
+    echo "Image gepusht: ${IMAGE}:${TAG} (+ :latest)"
 fi
 
 echo "Image gebaut: ${IMAGE}:${TAG} (+ ${IMAGE}:latest)"

@@ -1,6 +1,5 @@
 # Konfiguration des firstdorsal-web-Deployments (mpm compose).
 hostname: firstdorsal.eu
-# Das Image wird von deploy.sh per docker load auf den Host gebracht –
-# es gibt keine Registry, daher pull_policy: never im Template.
-image: firstdorsal-web
+# Das Image baut und pusht die GitHub-Pipeline (.github/workflows/build.yml).
+image: ghcr.io/firstdorsal/firstdorsal-web
 tag: latest

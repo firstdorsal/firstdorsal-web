@@ -2,8 +2,8 @@ services:
     firstdorsal-web:
         container_name: firstdorsal-web
         image: "{{ .image }}:{{ .tag }}"
-        # Image kommt per docker load (deploy.sh), nicht aus einer Registry.
-        pull_policy: never
+        # Bei jedem Deploy den aktuellen Stand aus der Registry ziehen.
+        pull_policy: always
         restart: always
         read_only: true
         networks:

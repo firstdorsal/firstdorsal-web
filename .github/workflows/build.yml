@@ -1,0 +1,35 @@
+name: Build
+
+# Die Pipeline ruft nur das lokale Build-Skript auf (build.sh) – derselbe
+# Ablauf funktioniert unverändert auf jedem Entwickler-Rechner. Gebaut wird
+# vollständig im Container (Tests inklusive), gepusht wird nach ghcr.io.
+# Das Deployment auf turing passiert anschließend manuell über deploy.sh.
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    packages: write
+
+concurrency:
+    group: build
+    cancel-in-progress: false
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Bei ghcr.io anmelden
+              run: |
+                  printf '%s' "${GITHUB_TOKEN}" | docker login ghcr.io \
+                      -u "${GITHUB_ACTOR}" --password-stdin
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_ACTOR: ${{ github.actor }}
+
+            - name: Bauen, testen und pushen
+              run: PUSH=1 bash build.sh
