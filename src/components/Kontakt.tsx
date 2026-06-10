@@ -6,7 +6,7 @@ import type { Lang } from '@/lib/i18n'
 
 const texte = {
   de: {
-    anmerkung: '3 – Konsultation',
+    anmerkung: '4 – Konsultation',
     titelVor: 'Erzählen Sie uns, wo es ',
     titelAkzent: 'weh tut',
     titelNach: '.',
@@ -14,7 +14,7 @@ const texte = {
     fakten: 'Erstberatung kostenlos · Festpreis oder transparenter Aufwand',
   },
   en: {
-    anmerkung: '3 – Consultation',
+    anmerkung: '4 – Consultation',
     titelVor: 'Tell us where it ',
     titelAkzent: 'hurts',
     titelNach: '.',
