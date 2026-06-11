@@ -122,7 +122,7 @@ export function Referenzen({ lang = 'de' }: { lang?: Lang }) {
         {t.projekte.map(({ name, url, urlLabel, bild, bildAlt, text, punkte }, i) => (
           <Card
             key={name}
-            className="reveal group gap-0 overflow-hidden py-0 transition-all duration-300 hover:-translate-y-1 hover:border-brand/60 hover:shadow-[0_16px_44px_-24px_var(--brand)]"
+            className="reveal group gap-0 overflow-hidden py-0 transition-all duration-300 hover:border-brand/60 hover:shadow-[0_16px_44px_-24px_var(--brand)]"
           >
             <div className="grid lg:grid-cols-[minmax(0,1fr)_440px]">
               <div className="flex flex-col py-7">

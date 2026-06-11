@@ -126,7 +126,7 @@ export function Leistungen({ lang = 'de' }: { lang?: Lang }) {
           return (
             <Card
               key={titel}
-              className="reveal group gap-4 py-7 transition-all duration-300 hover:-translate-y-1 hover:border-brand/60 hover:shadow-[0_16px_44px_-24px_var(--brand)]"
+              className="reveal group gap-4 py-7 transition-all duration-300 hover:border-brand/60 hover:shadow-[0_16px_44px_-24px_var(--brand)]"
               style={{ '--reveal-delay': `${i * 110}ms` } as CSSProperties}
             >
               <CardHeader className="gap-3">
