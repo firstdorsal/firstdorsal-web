@@ -20,6 +20,19 @@ const texte = {
     abb: 'Abb.',
     projekte: [
       {
+        name: 'Queer Augsburg',
+        url: 'https://queer-augsburg.de/',
+        urlLabel: 'queer-augsburg.de',
+        bild: '/referenzen/queer-augsburg.webp',
+        bildAlt: 'Screenshot von queer-augsburg.de: Veranstaltungsliste mit Terminen, Orten und Barrierefreiheits-Angaben',
+        text: 'Komplette Plattform für den Verein Queer Augsburg e.V. – Website samt Backend und Mitgliederverwaltung.',
+        punkte: [
+          'Login- und Nutzerverwaltung',
+          'Event-Redaktion direkt im Browser',
+          'E-Mail-Versand an die Mitglieder',
+        ],
+      },
+      {
         name: 'IMPEDANZ',
         url: 'https://impedanz.net',
         urlLabel: 'impedanz.net',
@@ -45,19 +58,6 @@ const texte = {
           'Teil des Portfolios für Architektur, Möbel und Visualisierung',
         ],
       },
-      {
-        name: 'Queer Augsburg',
-        url: 'https://queer-augsburg.de/',
-        urlLabel: 'queer-augsburg.de',
-        bild: '/referenzen/queer-augsburg.webp',
-        bildAlt: 'Screenshot von queer-augsburg.de: Veranstaltungsliste mit Terminen, Orten und Barrierefreiheits-Angaben',
-        text: 'Komplette Plattform für den Verein Queer Augsburg e.V. – Website samt Backend und Mitgliederverwaltung.',
-        punkte: [
-          'Login- und Nutzerverwaltung',
-          'Event-Redaktion direkt im Browser',
-          'E-Mail-Versand an die Mitglieder',
-        ],
-      },
     ],
   },
   en: {
@@ -65,6 +65,19 @@ const texte = {
     anmerkung: 'work you can click on',
     abb: 'Fig.',
     projekte: [
+      {
+        name: 'Queer Augsburg',
+        url: 'https://queer-augsburg.de/',
+        urlLabel: 'queer-augsburg.de',
+        bild: '/referenzen/queer-augsburg.webp',
+        bildAlt: 'Screenshot of queer-augsburg.de: event list with dates, venues and accessibility details',
+        text: 'Complete platform for the non-profit Queer Augsburg e.V. – website including backend and member management.',
+        punkte: [
+          'Login and user management',
+          'In-browser event editing',
+          'Email delivery to members',
+        ],
+      },
       {
         name: 'IMPEDANZ',
         url: 'https://impedanz.net',
@@ -89,19 +102,6 @@ const texte = {
           'Interactive city map with clickable case studies',
           'In-browser 3D viewer',
           'Part of a portfolio for architecture, furniture and visualisation',
-        ],
-      },
-      {
-        name: 'Queer Augsburg',
-        url: 'https://queer-augsburg.de/',
-        urlLabel: 'queer-augsburg.de',
-        bild: '/referenzen/queer-augsburg.webp',
-        bildAlt: 'Screenshot of queer-augsburg.de: event list with dates, venues and accessibility details',
-        text: 'Complete platform for the non-profit Queer Augsburg e.V. – website including backend and member management.',
-        punkte: [
-          'Login and user management',
-          'In-browser event editing',
-          'Email delivery to members',
         ],
       },
     ],
