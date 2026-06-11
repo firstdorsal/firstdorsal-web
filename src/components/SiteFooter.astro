@@ -1,4 +1,5 @@
 ---
+import MailText from '@/components/MailText.astro'
 import type { Lang } from '@/lib/i18n'
 
 interface Props {
@@ -30,12 +31,7 @@ const t = texte[lang]
   >
     <p>
       firstdorsal IT-Dienstleistungen ·
-      <a
-        class="underline underline-offset-4 hover:text-foreground"
-        href="mailto:mail@firstdorsal.eu"
-      >
-        mail@firstdorsal.eu
-      </a>
+      <MailText />
     </p>
     <nav class="flex items-center gap-6" aria-label={t.rechtliches}>
       <a

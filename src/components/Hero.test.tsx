@@ -10,15 +10,16 @@ describe('Hero', () => {
     expect(heading).toHaveTextContent(/Das\s*Rückgrat\s*Ihrer IT\./)
   })
 
-  it('verlinkt die Anfrage per Mail und die Leistungen', () => {
+  it('verlinkt die Anfrage zur Kontakt-Sektion und die Leistungen', () => {
     render(<Hero />)
-    // CTA-Button und klickbarer erster Wirbel der Illustration.
+    // CTA-Button und klickbarer erster Wirbel der Illustration. Beide
+    // zeigen bewusst auf #kontakt statt mailto (Scraper-Schutz).
     const anfrageLinks = screen.getAllByRole('link', {
       name: /Projekt anfragen/i,
     })
     expect(anfrageLinks).toHaveLength(2)
     for (const link of anfrageLinks) {
-      expect(link).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
+      expect(link).toHaveAttribute('href', '#kontakt')
     }
     expect(screen.getByRole('link', { name: /Leistungen/i })).toHaveAttribute(
       'href',

@@ -30,7 +30,7 @@ const texte = {
       'Backups',
       'Betrieb',
     ],
-    aria: 'Projekt anfragen – mail@firstdorsal.eu',
+    aria: 'Projekt anfragen – zur Kontakt-Sektion',
     bildunterschrift: 'Abb. 1 – Die Anatomie verlässlicher IT.',
   },
   en: {
@@ -44,7 +44,7 @@ const texte = {
       'Backups',
       'Operations',
     ],
-    aria: 'Request a project – mail@firstdorsal.eu',
+    aria: 'Request a project – go to the contact section',
     bildunterschrift: 'Fig. 1 – The anatomy of reliable IT.',
   },
 }
@@ -174,8 +174,10 @@ export function SpineIllustration({
   return (
     <figure className={className}>
       <svg viewBox="0 0 400 568" fill="none" className="spine-fig w-full">
-        {/* Der erste Wirbel ist die Anfrage – und tatsächlich klickbar. */}
-        <a href="mailto:mail@firstdorsal.eu" aria-label={t.aria}>
+        {/* Der erste Wirbel ist die Anfrage – und tatsächlich klickbar.
+            Ziel ist die Kontakt-Sektion statt mailto, damit die Adresse
+            nicht im statischen HTML steht (Scraper-Schutz). */}
+        <a href="#kontakt" aria-label={t.aria}>
           <Vertebra {...erster} i={0} />
           <VertebraLabel {...erster} i={0} />
         </a>

@@ -17,8 +17,9 @@ describe('CopyMail', () => {
 
   it('kopiert die Adresse in die Zwischenablage und bestätigt', async () => {
     render(<CopyMail />)
+    // aria-Label bewusst ohne Adresse (Scraper-Schutz).
     const btn = screen.getByRole('button', {
-      name: /E-Mail-Adresse mail@firstdorsal\.eu kopieren/i,
+      name: /E-Mail-Adresse kopieren/i,
     })
     await userEvent.click(btn)
     expect(writeText).toHaveBeenCalledWith('mail@firstdorsal.eu')

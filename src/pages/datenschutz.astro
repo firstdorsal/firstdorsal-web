@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro'
 import SiteHeader from '@/components/SiteHeader.astro'
 import SiteFooter from '@/components/SiteFooter.astro'
+import MailText from '@/components/MailText.astro'
 ---
 
 <Layout
@@ -28,11 +29,7 @@ import SiteFooter from '@/components/SiteFooter.astro'
           Paul Colin Hennig<br />
           Imhofstraße 12<br />
           86159 Augsburg<br />
-          E-Mail:
-          <a
-            class="underline underline-offset-4 hover:text-foreground"
-            href="mailto:mail@firstdorsal.eu">mail@firstdorsal.eu</a
-          >
+          E-Mail: <MailText />
         </p>
       </section>
 

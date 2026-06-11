@@ -1,0 +1,22 @@
+---
+// Spam-Scraper-Schutz für statisch gerenderte Stellen (Footer, Impressum,
+// Datenschutz): Adresse und mailto-Href werden vollständig HTML-entity-
+// kodiert ausgeliefert. Der Browser zeigt sie normal an, im Quelltext
+// steht die Adresse aber nie im Klartext.
+import { mailAdresse } from '@/lib/mail'
+
+interface Props {
+  class?: string
+}
+
+const {
+  class: klasse = 'underline underline-offset-4 hover:text-foreground',
+} = Astro.props
+
+const enc = (s: string) =>
+  [...s].map((c) => `&#${c.codePointAt(0)};`).join('')
+
+const html = `<a class="${klasse}" href="${enc(`mailto:${mailAdresse()}`)}">${enc(mailAdresse())}</a>`
+---
+
+<Fragment set:html={html} />

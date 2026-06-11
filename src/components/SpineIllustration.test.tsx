@@ -28,9 +28,10 @@ describe('SpineIllustration', () => {
     ).toBeInTheDocument()
   })
 
-  it('macht den ersten Wirbel als mailto-Link klickbar', () => {
+  it('macht den ersten Wirbel als Link zur Kontakt-Sektion klickbar', () => {
     render(<SpineIllustration />)
-    const link = screen.getByLabelText('Projekt anfragen – mail@firstdorsal.eu')
-    expect(link).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
+    // Bewusst #kontakt statt mailto (Scraper-Schutz).
+    const link = screen.getByLabelText('Projekt anfragen – zur Kontakt-Sektion')
+    expect(link).toHaveAttribute('href', '#kontakt')
   })
 })

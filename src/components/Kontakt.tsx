@@ -1,7 +1,5 @@
-import { ArrowRight } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 import { CopyMail } from '@/components/CopyMail'
+import { MailLink } from '@/components/MailLink'
 import type { Lang } from '@/lib/i18n'
 
 const texte = {
@@ -49,16 +47,7 @@ export function Kontakt({ lang = 'de' }: { lang?: Lang }) {
           {t.text}
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Button
-            size="lg"
-            className="label-caps h-11 px-7 tracking-[0.18em]"
-            asChild
-          >
-            <a href="mailto:mail@firstdorsal.eu">
-              mail@firstdorsal.eu
-              <ArrowRight />
-            </a>
-          </Button>
+          <MailLink lang={lang} />
           <CopyMail lang={lang} />
         </div>
         <p className="mt-8 font-mono text-xs text-muted-foreground">

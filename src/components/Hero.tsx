@@ -56,12 +56,15 @@ export function Hero({ lang = 'de' }: { lang?: Lang }) {
           {t.untertitel}
         </p>
         <div className="anim-rise mt-9 flex flex-wrap gap-3" style={delay(270)}>
+          {/* Bewusst #kontakt statt mailto: Die Adresse soll nicht im
+              statischen HTML stehen (Scraper-Schutz); die Mail-CTAs
+              wohnen in der Kontakt-Sektion. */}
           <Button
             size="lg"
             className="label-caps h-11 px-7 tracking-[0.18em]"
             asChild
           >
-            <a href="mailto:mail@firstdorsal.eu">
+            <a href="#kontakt">
               {t.anfragen}
               <ArrowRight />
             </a>

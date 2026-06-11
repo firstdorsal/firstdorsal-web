@@ -11,10 +11,11 @@ describe('Kontakt', () => {
     )
   })
 
-  it('verlinkt die Kontakt-Mailadresse', () => {
+  it('baut den mailto-Link erst clientseitig zusammen (Scraper-Schutz)', async () => {
     render(<Kontakt />)
+    // Nach der Hydration zeigt der Button die Adresse und den mailto-Link.
     expect(
-      screen.getByRole('link', { name: /mail@firstdorsal\.eu/i }),
+      await screen.findByRole('link', { name: /mail@firstdorsal\.eu/i }),
     ).toHaveAttribute('href', 'mailto:mail@firstdorsal.eu')
   })
 
