@@ -42,7 +42,7 @@ const texte = {
         punkte: [
           'Eigenständiges Design statt Template',
           'Eventseiten mit iCal-Export',
-          'Self-hosted, ohne Drittanbieter, mit strikter Security-Policy',
+          'Auf eigener Infrastruktur, ohne Drittanbieter, mit strikter Security-Policy',
         ],
       },
       {
@@ -88,7 +88,7 @@ const texte = {
         punkte: [
           'Distinctive design instead of a template',
           'Event pages with iCal export',
-          'Self-hosted, no third parties, strict security policy',
+          'Own infrastructure, no third parties, strict security policy',
         ],
       },
       {

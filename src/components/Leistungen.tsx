@@ -1,5 +1,12 @@
 import type { CSSProperties } from 'react'
-import { Brain, HeartPulse, Activity, Stethoscope } from 'lucide-react'
+import {
+  Brain,
+  Bone,
+  HeartPulse,
+  Activity,
+  Stethoscope,
+  Eye,
+} from 'lucide-react'
 
 import {
   Card,
@@ -12,10 +19,11 @@ import { SectionHeading } from '@/components/SectionHeading'
 import type { Lang } from '@/lib/i18n'
 
 // Leistungen als Tafeln eines Atlas. Jede Tafel trägt ein anatomisches
-// Icon als Augenzwinkern zur Tafel-Metapher: Gehirn (Entwerfen), Herz mit
-// Puls („auf Herz und Nieren prüfen"), EKG-Linie (läuft und wird
-// überwacht), Stethoskop (Konsultation).
-const icons = [Brain, HeartPulse, Activity, Stethoscope]
+// Icon als Augenzwinkern zur Tafel-Metapher: Gehirn (Entwerfen), Knochen
+// (das Rückgrat: Backend), Herz mit Puls („auf Herz und Nieren prüfen"),
+// EKG-Linie (läuft und wird überwacht), Stethoskop (Konsultation), Auge
+// (mit den Augen der Nutzer sehen).
+const icons = [Brain, Bone, HeartPulse, Activity, Stethoscope, Eye]
 
 const texte = {
   de: {
@@ -23,13 +31,20 @@ const texte = {
     anmerkung: 'Wie können wir Ihnen helfen?',
     tafeln: [
       {
-        titel: 'Software, Web & Design',
-        text: 'Maßgeschneiderte Anwendungen und Web-Plattformen – individuell gestaltet, wartbar und auf Dauer betreibbar.',
+        titel: 'Web & Design',
+        text: 'Individuelle Websites und Web-Apps – kreativ gestaltet, schnell und ohne Ballast.',
         punkte: [
-          'Web-Plattformen und Anwendungen',
+          'Kreatives Webdesign – kein WordPress, keine Templates, keine unnötigen Cookie-Banner',
+          'Moderne Web-Apps mit Astro, React, TypeScript und Tailwind',
           'Apps als Progressive Web App – eine Codebasis, alle Betriebssysteme',
-          'Kreatives Webdesign – kein WordPress, keine Templates, kein Cookie-Banner',
+        ],
+      },
+      {
+        titel: 'Backends, APIs & Plattformen',
+        text: 'Das Rückgrat Ihrer Anwendung: robuste Backends und komplette Plattformen – wartbar und auf Dauer betreibbar.',
+        punkte: [
           'APIs und Backends (Rust, TypeScript)',
+          'Web-Plattformen mit Login und Nutzerverwaltung',
           'Modernisierung bestehender Systeme',
         ],
       },
@@ -44,9 +59,9 @@ const texte = {
       },
       {
         titel: 'Betrieb & Infrastruktur',
-        text: 'Self-hosted, reproduzierbar und datenschutzfreundlich – vom Container bis zum Deployment.',
+        text: 'Auf eigener Infrastruktur statt fremder Cloud – reproduzierbar und datenschutzfreundlich, vom Container bis zum Deployment.',
         punkte: [
-          'Self-hosted Deployments und Container',
+          'Deployments und Container auf eigener Infrastruktur',
           'CI/CD, Monitoring und Backups',
           'Kein Vendor-Lock-in: unabhängig von US-Konzernen wie AWS, Google und Microsoft',
           'Datensparsam und DSGVO-freundlich, in der EU',
@@ -57,8 +72,17 @@ const texte = {
         text: 'Unabhängige Beratung rund um Web, Cloud und Betrieb – pragmatisch, herstellerneutral und auch ohne anschließendes Projekt.',
         punkte: [
           'Web-Apps, APIs und Software-Architektur',
-          'Kubernetes, Container und Self-Hosting',
+          'Kubernetes, Container und Betrieb auf eigener Infrastruktur',
           'Zweite Meinung zu Angeboten, Projekten und Bestandssystemen',
+        ],
+      },
+      {
+        titel: 'UX & Usability-Testing',
+        text: 'Wir prüfen, ob Ihre Anwendung für echte Nutzer funktioniert – von der Oberfläche bis zur kompletten User Journey.',
+        punkte: [
+          'UX- und UI-Tests: Bedienbarkeit auf dem Prüfstand',
+          'User-Journey-Prüfungen: kommen Ihre Nutzer ans Ziel?',
+          'Konkrete, umsetzbare Empfehlungen statt Theorie',
         ],
       },
     ],
@@ -68,13 +92,20 @@ const texte = {
     anmerkung: 'How can we help you?',
     tafeln: [
       {
-        titel: 'Software, Web & Design',
-        text: 'Tailor-made applications and web platforms – individually designed, maintainable and built to run for years.',
+        titel: 'Web & Design',
+        text: 'Individual websites and web apps – creatively designed, fast and free of bloat.',
         punkte: [
-          'Web platforms and applications',
+          'Creative web design – no WordPress, no templates, no unnecessary cookie banners',
+          'Modern web apps with Astro, React, TypeScript and Tailwind',
           'Apps as Progressive Web Apps – one codebase, every operating system',
-          'Creative web design – no WordPress, no templates, no cookie banner',
+        ],
+      },
+      {
+        titel: 'Backends, APIs & Platforms',
+        text: 'The backbone of your application: robust backends and complete platforms – maintainable and built to run for years.',
+        punkte: [
           'APIs and backends (Rust, TypeScript)',
+          'Web platforms with login and user management',
           'Modernisation of existing systems',
         ],
       },
@@ -89,9 +120,9 @@ const texte = {
       },
       {
         titel: 'Operations & Infrastructure',
-        text: 'Self-hosted, reproducible and privacy-friendly – from container to deployment.',
+        text: 'On your own infrastructure instead of a third-party cloud – reproducible and privacy-friendly, from container to deployment.',
         punkte: [
-          'Self-hosted deployments and containers',
+          'Deployments and containers on your own infrastructure',
           'CI/CD, monitoring and backups',
           'No vendor lock-in: independent of US corporations like AWS, Google and Microsoft',
           'Data-minimal and GDPR-friendly, hosted in the EU',
@@ -102,8 +133,17 @@ const texte = {
         text: 'Independent consulting on web, cloud and operations – pragmatic, vendor-neutral, with or without a follow-up project.',
         punkte: [
           'Web apps, APIs and software architecture',
-          'Kubernetes, containers and self-hosting',
+          'Kubernetes, containers and self-managed infrastructure',
           'A second opinion on quotes, projects and legacy systems',
+        ],
+      },
+      {
+        titel: 'UX & Usability Testing',
+        text: 'We test whether your application works for real users – from the interface to the complete user journey.',
+        punkte: [
+          'UX and UI testing: usability put to the test',
+          'User journey reviews: do your users reach their goal?',
+          'Concrete, actionable recommendations instead of theory',
         ],
       },
     ],
