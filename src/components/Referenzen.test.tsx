@@ -17,12 +17,15 @@ describe('Referenzen', () => {
     expect(
       screen.getByRole('link', { name: /samuelgrau\.com/i }),
     ).toHaveAttribute('href', 'https://samuelgrau.com/augsburg_gaps/')
+    expect(
+      screen.getByRole('link', { name: /queer-augsburg\.de/i }),
+    ).toHaveAttribute('href', 'https://queer-augsburg.de/')
     for (const link of screen.getAllByRole('link')) {
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
     }
     // Die Screenshots liegen bewusst in aria-hidden-Links (der Textlink
     // darüber ist der zugängliche) – daher hidden: true.
-    expect(screen.getAllByRole('img', { hidden: true })).toHaveLength(2)
+    expect(screen.getAllByRole('img', { hidden: true })).toHaveLength(3)
   })
 
   it('rendert auf Englisch', () => {
