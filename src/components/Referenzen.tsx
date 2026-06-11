@@ -24,7 +24,7 @@ const texte = {
         url: 'https://impedanz.net',
         urlLabel: 'impedanz.net',
         bild: '/referenzen/impedanz.webp',
-        bildAlt: 'Screenshot der Website impedanz.net: Eventliste in Schwarz-Weiß mit Monospace-Typografie',
+        bildAlt: 'Screenshot der Website impedanz.net: Terminal-Ästhetik mit kommender Veranstaltung und Event-Archiv',
         text: 'Kompletter Webauftritt für die Veranstaltungsreihe für elektronische Musik – vom Design bis zum Betrieb.',
         punkte: [
           'Eigenständiges Design statt Template',
@@ -70,7 +70,7 @@ const texte = {
         url: 'https://impedanz.net',
         urlLabel: 'impedanz.net',
         bild: '/referenzen/impedanz.webp',
-        bildAlt: 'Screenshot of impedanz.net: black-and-white event list with monospace typography',
+        bildAlt: 'Screenshot of impedanz.net: terminal aesthetic with upcoming event and event archive',
         text: 'Complete web presence for the electronic music event series – from design to operations.',
         punkte: [
           'Distinctive design instead of a template',
