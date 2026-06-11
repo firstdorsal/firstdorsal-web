@@ -34,4 +34,16 @@ describe('SpineIllustration', () => {
     const link = screen.getByLabelText('Projekt anfragen – zur Kontakt-Sektion')
     expect(link).toHaveAttribute('href', '#kontakt')
   })
+
+  it('deckt den ganzen Bereich von Wirbel 1 mit einer Trefferfläche ab', () => {
+    render(<SpineIllustration />)
+    const link = screen.getByLabelText('Projekt anfragen – zur Kontakt-Sektion')
+    const hitArea = link.querySelector('rect[pointer-events="all"]')
+    expect(hitArea).not.toBeNull()
+    // Fläche muss Nummer (ab x≈65) bis Label-Ende (x≈360) überspannen.
+    const x = Number(hitArea!.getAttribute('x'))
+    const width = Number(hitArea!.getAttribute('width'))
+    expect(x).toBeLessThanOrEqual(65)
+    expect(x + width).toBeGreaterThanOrEqual(360)
+  })
 })

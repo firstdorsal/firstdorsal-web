@@ -178,6 +178,17 @@ export function SpineIllustration({
             Ziel ist die Kontakt-Sektion statt mailto, damit die Adresse
             nicht im statischen HTML steht (Scraper-Schutz). */}
         <a href="#kontakt" aria-label={t.aria}>
+          {/* Unsichtbare Trefferfläche über dem gesamten Ensemble aus
+              Nummer, Wirbel und Label – sonst ginge der Klick zwischen
+              den feinen Strichen ins Leere. */}
+          <rect
+            x={56}
+            y={10}
+            width={312}
+            height={72}
+            fill="none"
+            pointerEvents="all"
+          />
           <Vertebra {...erster} i={0} />
           <VertebraLabel {...erster} i={0} />
         </a>
