@@ -37,6 +37,9 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/chat/api/admin/conversations/{id}/media", post(admin_send_media))
         .route("/chat/api/admin/conversations/{id}", delete(admin_delete))
+        // Nur in Tests aktiv (E2E_SEED=1): füllt eine Konversation mit
+        // vielen Nachrichten inkl. Medien für die Performance-Tests.
+        .route("/chat/api/test/seed", post(seed))
         // Uploads bis MAX_UPLOAD_BYTES (Videos!), plus Multipart-Overhead.
         .layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES + 1024 * 1024))
         .with_state(state)
@@ -334,13 +337,35 @@ const MESSAGE_SELECT: &str = "SELECT m.id, m.conversation_id, m.sender, m.kind, 
             a.filename AS a_filename, a.transcript AS a_transcript, a.transcript_status AS a_status \
      FROM messages m LEFT JOIN attachments a ON a.id = m.attachment_id";
 
-async fn list_messages(state: &SharedState, conversation_id: i64) -> ApiResult<Json<Value>> {
-    let rows = sqlx::query(&format!(
-        "{MESSAGE_SELECT} WHERE m.conversation_id = ? ORDER BY m.id LIMIT 500"
+// Cursor-Pagination für endloses Scrollen: ohne `before` die neuesten
+// `limit` Nachrichten, mit `before` die nächstälteren davor. Zurück
+// kommt immer aufsteigend (älteste zuerst), damit der Client sie oben
+// voranstellen kann.
+const PAGE_DEFAULT: i64 = 30;
+const PAGE_MAX: i64 = 100;
+
+#[derive(Deserialize)]
+struct Page {
+    before: Option<i64>,
+    limit: Option<i64>,
+}
+
+async fn list_messages(
+    state: &SharedState,
+    conversation_id: i64,
+    page: &Page,
+) -> ApiResult<Json<Value>> {
+    let limit = page.limit.unwrap_or(PAGE_DEFAULT).clamp(1, PAGE_MAX);
+    let before = page.before.unwrap_or(i64::MAX);
+    let mut rows = sqlx::query(&format!(
+        "{MESSAGE_SELECT} WHERE m.conversation_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT ?"
     ))
     .bind(conversation_id)
+    .bind(before)
+    .bind(limit)
     .fetch_all(&state.db)
     .await?;
+    rows.reverse(); // DESC geladen, aufsteigend zurückgeben
     Ok(Json(Value::Array(rows.iter().map(message_json).collect())))
 }
 
@@ -570,18 +595,21 @@ struct SendBody {
 async fn customer_messages(
     State(state): State<SharedState>,
     headers: HeaderMap,
+    Query(page): Query<Page>,
 ) -> ApiResult<Json<Value>> {
     let (_, conversation_id) = require_customer(&state, &headers).await?;
-    // Operator-Nachrichten gelten mit dem Abruf als gelesen.
-    sqlx::query(
-        "UPDATE messages SET read_at = ? \
-         WHERE conversation_id = ? AND sender = 'operator' AND read_at IS NULL",
-    )
-    .bind(now())
-    .bind(conversation_id)
-    .execute(&state.db)
-    .await?;
-    list_messages(&state, conversation_id).await
+    // Beim Erstabruf (ohne Cursor) gelten Operator-Nachrichten als gelesen.
+    if page.before.is_none() {
+        sqlx::query(
+            "UPDATE messages SET read_at = ? \
+             WHERE conversation_id = ? AND sender = 'operator' AND read_at IS NULL",
+        )
+        .bind(now())
+        .bind(conversation_id)
+        .execute(&state.db)
+        .await?;
+    }
+    list_messages(&state, conversation_id, &page).await
 }
 
 async fn customer_send(
@@ -652,19 +680,22 @@ async fn admin_messages(
     State(state): State<SharedState>,
     headers: HeaderMap,
     Path(id): Path<i64>,
+    Query(page): Query<Page>,
 ) -> ApiResult<Json<Value>> {
     require_operator(&state, &headers).await?;
     conversation_exists(&state, id).await?;
-    // Kunden-Nachrichten gelten mit dem Abruf als gelesen.
-    sqlx::query(
-        "UPDATE messages SET read_at = ? \
-         WHERE conversation_id = ? AND sender = 'customer' AND read_at IS NULL",
-    )
-    .bind(now())
-    .bind(id)
-    .execute(&state.db)
-    .await?;
-    list_messages(&state, id).await
+    // Beim Erstabruf (ohne Cursor) gelten Kunden-Nachrichten als gelesen.
+    if page.before.is_none() {
+        sqlx::query(
+            "UPDATE messages SET read_at = ? \
+             WHERE conversation_id = ? AND sender = 'customer' AND read_at IS NULL",
+        )
+        .bind(now())
+        .bind(id)
+        .execute(&state.db)
+        .await?;
+    }
+    list_messages(&state, id, &page).await
 }
 
 async fn admin_send(
@@ -689,6 +720,158 @@ async fn admin_send_media(
     conversation_exists(&state, id).await?;
     let msg = save_media(&state, id, "operator", multipart).await?;
     Ok(Json(msg))
+}
+
+// ---------- Test-Seed (nur mit E2E_SEED=1) ----------
+
+#[derive(Deserialize)]
+struct SeedBody {
+    email: String,
+    count: i64,
+}
+
+// 1x1-PNG und winziges Datenstück als geteilte Blobs – die Performance-
+// Tests prüfen die Virtualisierung der Liste, nicht die Medieninhalte.
+const SEED_PNG: &[u8] = &[
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0xfc, 0xcf, 0xc0, 0x50,
+    0x0f, 0x00, 0x04, 0x85, 0x01, 0x80, 0x84, 0xa9, 0x8c, 0x21, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+    0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+];
+
+async fn write_seed_blob(state: &SharedState, bytes: &[u8]) -> ApiResult<String> {
+    let sha256: String = {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+    };
+    let uploads = state.cfg.data_dir.join("uploads");
+    tokio::fs::create_dir_all(&uploads)
+        .await
+        .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
+    tokio::fs::write(uploads.join(&sha256), bytes)
+        .await
+        .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
+    Ok(sha256)
+}
+
+/// Füllt die Konversation einer (Test-)Adresse mit `count` Nachrichten:
+/// abwechselnd Text, Bild und Video, damit die virtualisierte Liste mit
+/// gemischten Höhen unter Last getestet wird. Bild und Video teilen sich
+/// je einen Blob.
+async fn seed(
+    State(state): State<SharedState>,
+    Json(body): Json<SeedBody>,
+) -> ApiResult<Json<Value>> {
+    if !state.cfg.seed_enabled {
+        return Err(ApiError(StatusCode::NOT_FOUND, "not_found"));
+    }
+    let email = body.email.trim().to_ascii_lowercase();
+    let count = body.count.clamp(1, 10_000);
+
+    sqlx::query(
+        "INSERT INTO customers (email, created_at, last_seen_at) VALUES (?, ?, ?) \
+         ON CONFLICT(email) DO NOTHING",
+    )
+    .bind(&email)
+    .bind(now())
+    .bind(now())
+    .execute(&state.db)
+    .await?;
+    let customer_id: i64 = sqlx::query("SELECT id FROM customers WHERE email = ?")
+        .bind(&email)
+        .fetch_one(&state.db)
+        .await?
+        .get("id");
+    sqlx::query("INSERT OR IGNORE INTO conversations (customer_id, created_at) VALUES (?, ?)")
+        .bind(customer_id)
+        .bind(now())
+        .execute(&state.db)
+        .await?;
+    let conversation_id: i64 = sqlx::query("SELECT id FROM conversations WHERE customer_id = ?")
+        .bind(customer_id)
+        .fetch_one(&state.db)
+        .await?
+        .get("id");
+
+    let sha = write_seed_blob(&state, SEED_PNG).await?;
+    let img_id: i64 = sqlx::query(
+        "INSERT INTO attachments (kind, mime, size, sha256, filename, created_at) \
+         VALUES ('image', 'image/png', ?, ?, 'seed.png', ?)",
+    )
+    .bind(SEED_PNG.len() as i64)
+    .bind(&sha)
+    .bind(now())
+    .execute(&state.db)
+    .await?
+    .last_insert_rowid();
+    // Für „video" denselben Blob als video/mp4 referenzieren (reine
+    // Last-/Layout-Probe – der Player rendert die Kachel).
+    let vid_id: i64 = sqlx::query(
+        "INSERT INTO attachments (kind, mime, size, sha256, filename, created_at) \
+         VALUES ('video', 'video/mp4', ?, ?, 'seed.mp4', ?)",
+    )
+    .bind(SEED_PNG.len() as i64)
+    .bind(&sha)
+    .bind(now())
+    .execute(&state.db)
+    .await?
+    .last_insert_rowid();
+
+    let mut tx = state.db.begin().await.map_err(ApiError::from)?;
+    for i in 0..count {
+        let created_at = now();
+        let sender = if i % 2 == 0 { "customer" } else { "operator" };
+        match i % 3 {
+            0 => {
+                sqlx::query(
+                    "INSERT INTO messages (conversation_id, sender, kind, body_text, created_at) \
+                     VALUES (?, ?, 'text', ?, ?)",
+                )
+                .bind(conversation_id)
+                .bind(sender)
+                .bind(format!("Seed-Nachricht Nummer {i}"))
+                .bind(created_at)
+                .execute(&mut *tx)
+                .await
+                .map_err(ApiError::from)?;
+            }
+            1 => {
+                sqlx::query(
+                    "INSERT INTO messages (conversation_id, sender, kind, attachment_id, created_at) \
+                     VALUES (?, ?, 'image', ?, ?)",
+                )
+                .bind(conversation_id)
+                .bind(sender)
+                .bind(img_id)
+                .bind(created_at)
+                .execute(&mut *tx)
+                .await
+                .map_err(ApiError::from)?;
+            }
+            _ => {
+                sqlx::query(
+                    "INSERT INTO messages (conversation_id, sender, kind, attachment_id, created_at) \
+                     VALUES (?, ?, 'video', ?, ?)",
+                )
+                .bind(conversation_id)
+                .bind(sender)
+                .bind(vid_id)
+                .bind(created_at)
+                .execute(&mut *tx)
+                .await
+                .map_err(ApiError::from)?;
+            }
+        }
+    }
+    tx.commit().await.map_err(ApiError::from)?;
+    sqlx::query("UPDATE conversations SET last_message_at = ? WHERE id = ?")
+        .bind(now())
+        .bind(conversation_id)
+        .execute(&state.db)
+        .await?;
+
+    Ok(Json(json!({ "conversation_id": conversation_id, "inserted": count })))
 }
 
 /// Manuelles Löschen einer Konversation (DSGVO: Löschung auf Anfrage);

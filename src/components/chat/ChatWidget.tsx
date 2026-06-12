@@ -4,6 +4,7 @@ import { MessageCircle, Phone, Video, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Composer } from '@/components/chat/Composer'
 import { MessageBubble, PendingBubble } from '@/components/chat/MessageBubble'
+import { MessageList } from '@/components/chat/MessageList'
 import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
 import {
   applyTranscript,
@@ -11,6 +12,7 @@ import {
   fetchMessages,
   logout,
   openChatSocket,
+  PAGE_SIZE,
   requestMagicLink,
   sendMedia,
   sendMessage,
@@ -98,12 +100,15 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
   const [email, setEmail] = useState('')
   const [fehler, setFehler] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [hasMore, setHasMore] = useState(false)
   const [pending, setPending] = useState<OutboxEntry[]>([])
   const [istOffline, setIstOffline] = useState(false)
-  const listRef = useRef<HTMLDivElement>(null)
   const flushingRef = useRef(false)
   const wsRef = useRef<WebSocket | null>(null)
   const callRef = useRef<CallHandle>(null)
+  // Aktuelle Nachrichten für Callbacks ohne Neuanlegen (loadOlder).
+  const messagesRef = useRef<ChatMessage[]>([])
+  messagesRef.current = messages
 
   // Signalisierung über den jeweils aktuellen Socket; die eigene
   // Konversation erzwingt der Server (conversation_id darf null sein).
@@ -175,10 +180,14 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
       .then((msgs) => {
         if (!aktiv) return
         setMessages(msgs)
+        setHasMore(msgs.length === PAGE_SIZE)
         void flushOutbox()
       })
       .catch(async () => {
-        if (aktiv) setMessages(await cachedMessages())
+        if (aktiv) {
+          setMessages(await cachedMessages())
+          setHasMore(false)
+        }
       })
     outboxAll().then((p) => aktiv && setPending(p))
 
@@ -214,15 +223,30 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
     }
   }, [open, phase, addMessage, flushOutbox])
 
-  // Verlauf für die Offline-Ansicht aktuell halten.
+  // Verlauf für die Offline-Ansicht aktuell halten (nur das jüngste
+  // Fenster – das genügt für die Offline-Lesbarkeit).
   useEffect(() => {
-    if (phase === 'chat' && messages.length > 0) void cacheMessages(messages)
+    if (phase === 'chat' && messages.length > 0) void cacheMessages(messages.slice(-PAGE_SIZE))
   }, [phase, messages])
 
-  // Neue Nachrichten ins Sichtfeld scrollen.
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages, pending])
+  // Ältere Nachrichten nachladen (oben anstellen) für endloses Scrollen.
+  const loadOlder = useCallback(() => {
+    const oldest = messagesRef.current[0]?.id
+    if (oldest == null) return
+    fetchMessages(oldest)
+      .then((aeltere) => {
+        if (aeltere.length === 0) {
+          setHasMore(false)
+          return
+        }
+        setMessages((prev) => {
+          const bekannt = new Set(prev.map((m) => m.id))
+          return [...aeltere.filter((m) => !bekannt.has(m.id)), ...prev]
+        })
+        setHasMore(aeltere.length === PAGE_SIZE)
+      })
+      .catch(() => {})
+  }, [])
 
   async function linkAnfordern(e: React.FormEvent) {
     e.preventDefault()
@@ -378,25 +402,26 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
               {t.offline}
             </p>
           )}
-          <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-            {messages.length === 0 && pending.length === 0 && (
-              <p className="annotation py-6 text-center text-sm text-muted-foreground">
-                {t.leer}
-              </p>
-            )}
-            {messages.map((m) => (
+          <MessageList
+            messages={messages}
+            hasMore={hasMore}
+            onLoadOlder={loadOlder}
+            renderMessage={(m) => (
               <MessageBubble
-                key={m.id}
                 message={m}
                 self={m.sender === 'customer'}
                 senderLabel={m.sender === 'customer' ? t.ich : t.firma}
                 lang={lang}
               />
-            ))}
-            {pending.map((p) => (
-              <PendingBubble key={`pending-${p.id}`} entry={p} lang={lang} />
-            ))}
-          </div>
+            )}
+            trailing={pending.map((p) => ({
+              key: `pending-${p.id}`,
+              node: <PendingBubble entry={p} lang={lang} />,
+            }))}
+            empty={
+              <p className="annotation py-6 text-center text-sm text-muted-foreground">{t.leer}</p>
+            }
+          />
           {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
           <Composer lang={lang} onText={textSenden} onMedia={medienSenden} />
         </>

@@ -48,6 +48,9 @@ pub struct Config {
     pub turn_secret: Option<String>,
     /// Gültigkeitsdauer der TURN-Zugangsdaten in Sekunden.
     pub turn_ttl: i64,
+    /// Nur für Tests: aktiviert den Seed-Endpoint (viele Nachrichten für
+    /// die Performance-Tests des virtuellen Scrollens). Nie in Produktion.
+    pub seed_enabled: bool,
 }
 
 fn env_list(key: &str) -> Vec<String> {
@@ -108,6 +111,7 @@ impl Config {
             turn_urls: env_list("TURN_URLS"),
             turn_secret: std::env::var("TURN_SECRET").ok().filter(|v| !v.is_empty()),
             turn_ttl: env_or("TURN_TTL", "3600").parse().unwrap_or(3600),
+            seed_enabled: env_or("E2E_SEED", "") == "1",
         })
     }
 

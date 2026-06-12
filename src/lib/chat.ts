@@ -73,8 +73,19 @@ export async function logout(): Promise<void> {
   await fetch('/chat/api/auth/logout', { method: 'POST' })
 }
 
-export async function fetchMessages(): Promise<ChatMessage[]> {
-  return asJson(await fetch('/chat/api/messages'))
+// Pagination fürs endlose Scrollen: ohne `before` die neuesten Nachrichten,
+// mit `before` (kleinste bekannte Id) die nächstälteren. Antwort immer
+// aufsteigend.
+export const PAGE_SIZE = 30
+
+function pageQuery(before?: number, limit = PAGE_SIZE): string {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (before != null) params.set('before', String(before))
+  return params.toString()
+}
+
+export async function fetchMessages(before?: number): Promise<ChatMessage[]> {
+  return asJson(await fetch(`/chat/api/messages?${pageQuery(before)}`))
 }
 
 export async function sendMessage(text: string): Promise<ChatMessage> {
@@ -120,8 +131,11 @@ export async function fetchConversations(): Promise<ChatConversation[]> {
   return asJson(await fetch('/chat/api/admin/conversations'))
 }
 
-export async function fetchConversationMessages(id: number): Promise<ChatMessage[]> {
-  return asJson(await fetch(`/chat/api/admin/conversations/${id}/messages`))
+export async function fetchConversationMessages(
+  id: number,
+  before?: number,
+): Promise<ChatMessage[]> {
+  return asJson(await fetch(`/chat/api/admin/conversations/${id}/messages?${pageQuery(before)}`))
 }
 
 export async function sendOperatorMessage(id: number, text: string): Promise<ChatMessage> {

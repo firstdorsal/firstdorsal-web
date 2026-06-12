@@ -4,6 +4,7 @@ import { Phone, Trash2, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Composer } from '@/components/chat/Composer'
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { MessageList } from '@/components/chat/MessageList'
 import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
 import {
   applyTranscript,
@@ -14,6 +15,7 @@ import {
   formatTime,
   logout,
   openChatSocket,
+  PAGE_SIZE,
   requestMagicLink,
   sendOperatorMedia,
   sendOperatorMessage,
@@ -37,11 +39,13 @@ export function AdminChat() {
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const listRef = useRef<HTMLDivElement>(null)
+  const [hasMore, setHasMore] = useState(false)
   const selectedRef = useRef<number | null>(null)
   selectedRef.current = selected
   const wsRef = useRef<WebSocket | null>(null)
   const callRef = useRef<CallHandle>(null)
+  const messagesRef = useRef<ChatMessage[]>([])
+  messagesRef.current = messages
 
   // Signalisierung an die gerade geöffnete Konversation.
   const signal = useCallback(
@@ -104,17 +108,35 @@ export function AdminChat() {
 
   useEffect(() => {
     if (phase !== 'admin' || selected === null) return
+    setHasMore(false)
     fetchConversationMessages(selected)
       .then((msgs) => {
         setMessages(msgs)
+        setHasMore(msgs.length === PAGE_SIZE)
         refreshConversations() // ungelesen-Zähler ist jetzt 0
       })
       .catch(() => {})
   }, [phase, selected, refreshConversations])
 
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages])
+  // Ältere Nachrichten der offenen Konversation nachladen (Virtual Scroll).
+  const loadOlder = useCallback(() => {
+    const conv = selectedRef.current
+    const oldest = messagesRef.current[0]?.id
+    if (conv == null || oldest == null) return
+    fetchConversationMessages(conv, oldest)
+      .then((aeltere) => {
+        if (aeltere.length === 0) {
+          setHasMore(false)
+          return
+        }
+        setMessages((prev) => {
+          const bekannt = new Set(prev.map((m) => m.id))
+          return [...aeltere.filter((m) => !bekannt.has(m.id)), ...prev]
+        })
+        setHasMore(aeltere.length === PAGE_SIZE)
+      })
+      .catch(() => {})
+  }, [])
 
   async function linkAnfordern(e: React.FormEvent) {
     e.preventDefault()
@@ -287,17 +309,19 @@ export function AdminChat() {
                   </Button>
                 </div>
               </div>
-              <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-                {messages.map((m) => (
+              <MessageList
+                messages={messages}
+                hasMore={hasMore}
+                onLoadOlder={loadOlder}
+                renderMessage={(m) => (
                   <MessageBubble
-                    key={m.id}
                     message={m}
                     self={m.sender === 'operator'}
                     senderLabel={m.sender === 'operator' ? 'Sie' : aktive.email}
                     lang="de"
                   />
-                ))}
-              </div>
+                )}
+              />
               {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
               <Composer lang="de" onText={antworten} onMedia={medienAntworten} />
               {/* Anruf-Overlay über dem geöffneten Gespräch. */}

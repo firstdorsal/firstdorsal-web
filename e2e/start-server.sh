@@ -18,4 +18,5 @@ exec env \
     OPERATOR_EMAILS=operator@firstdorsal.eu \
     WHISPER_URL=http://localhost:8799 \
     WHISPER_LANGUAGE=de \
+    E2E_SEED=1 \
     cargo run --manifest-path server/Cargo.toml
