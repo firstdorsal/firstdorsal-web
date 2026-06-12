@@ -30,25 +30,28 @@ RUN pnpm build
 FROM docker.io/library/rust:1.94-alpine AS server-build
 RUN apk add --no-cache musl-dev
 WORKDIR /app
-# Abhängigkeiten zuerst bauen (Docker-Layer-Cache): Dummy-main genügt.
+# Abhängigkeiten zuerst bauen (Docker-Layer-Cache): Dummy-lib+main genügt.
+# webchat ist Bibliothek (src/lib.rs) + Binary (src/main.rs).
 COPY server/Cargo.toml server/Cargo.lock ./
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    mkdir src && echo 'fn main() {}' > src/main.rs \
+    mkdir src \
+    && echo '' > src/lib.rs \
+    && echo 'fn main() {}' > src/main.rs \
     && cargo build --release --locked \
     && rm -rf src
 COPY server/migrations migrations
 COPY server/src src
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    touch src/main.rs && cargo test --release --locked && cargo build --release --locked
+    touch src/lib.rs src/main.rs && cargo test --release --locked && cargo build --release --locked
 
 # Laufzeitbasis per RUNTIME_FLAVOR: "" = scratch, "-alpine" = Debug-Shell.
 FROM scratch AS runtime
 FROM docker.io/library/alpine:3.22 AS runtime-alpine
 FROM runtime${RUNTIME_FLAVOR}
-COPY --from=server-build /app/target/release/firstdorsal-server /firstdorsal-server
+COPY --from=server-build /app/target/release/webchat /webchat
 COPY --from=web-build /app/dist /public
 ENV PORT=80 \
     STATIC_DIR=/public \
     DATA_DIR=/data
 EXPOSE 80
-ENTRYPOINT ["/firstdorsal-server"]
+ENTRYPOINT ["/webchat"]

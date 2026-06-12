@@ -1,11 +1,21 @@
-# Chat-Backend + statische Auslieferung der Website in einem Binary.
-# Ersetzt den static-web-server: axum liefert das Astro-dist/ aus und
-# bedient zusätzlich /chat/api/** (REST) und /chat/ws (WebSocket).
+# Wiederverwendbarer Chat-Backend-Dienst (markenneutral „webchat").
+# Bibliothek + dünnes Binary: axum-API/WebSocket für Magic-Link-Chat,
+# Uploads, Whisper-Transkription und WebRTC-Signalisierung; optional
+# liefert er ein statisches Frontend (STATIC_DIR) gleich mit aus.
 [package]
-name = "firstdorsal-server"
+name = "webchat"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
+# Bibliothek (einbindbar in andere Projekte) + dünnes Binary darüber.
+[lib]
+name = "webchat"
+path = "src/lib.rs"
+
+[[bin]]
+name = "webchat"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"

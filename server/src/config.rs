@@ -19,11 +19,20 @@ pub struct SmtpConfig {
 #[derive(Clone)]
 pub struct Config {
     pub port: u16,
+    /// Markenname für E-Mails (Betreff/Signatur) – markenneutral pro Projekt.
+    pub brand_name: String,
     /// Basis-URL für Magic-Links, z. B. https://firstdorsal.eu
     pub public_url: String,
-    pub static_dir: PathBuf,
+    /// Statisches Frontend, das mitausgeliefert wird. None = reiner
+    /// API-/WebSocket-Dienst (Frontend kommt von woanders).
+    pub static_dir: Option<PathBuf>,
     pub data_dir: PathBuf,
     pub mail_from: String,
+    /// Ziel nach erfolgreichem Kunden-Login (deutsch / englisch).
+    pub customer_redirect: String,
+    pub customer_redirect_en: String,
+    /// Ziel nach erfolgreichem Operator-Login.
+    pub admin_redirect: String,
     /// None = lokale Entwicklung, Links landen nur im Log.
     pub smtp: Option<SmtpConfig>,
     /// Wer sich mit diesen Adressen anmeldet, bekommt Operator-Zugang.
@@ -85,11 +94,19 @@ impl Config {
         };
         Ok(Self {
             port: env_or("PORT", "8080").parse().context("PORT")?,
+            brand_name: env_or("BRAND_NAME", "firstdorsal"),
             cookie_secure: public_url.starts_with("https://"),
             public_url,
-            static_dir: env_or("STATIC_DIR", "../dist").into(),
+            // Kein STATIC_DIR = reiner Backend-Dienst (kein Frontend).
+            static_dir: std::env::var("STATIC_DIR")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from),
             data_dir: env_or("DATA_DIR", "./data").into(),
             mail_from: env_or("MAIL_FROM", "firstdorsal <mail@firstdorsal.eu>"),
+            customer_redirect: env_or("CUSTOMER_REDIRECT", "/?chat=open"),
+            customer_redirect_en: env_or("CUSTOMER_REDIRECT_EN", "/en/?chat=open"),
+            admin_redirect: env_or("ADMIN_REDIRECT", "/chat/admin/"),
             smtp,
             operator_emails: env_or("OPERATOR_EMAILS", "")
                 .split(',')

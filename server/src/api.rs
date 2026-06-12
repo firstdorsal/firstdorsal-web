@@ -249,7 +249,7 @@ async fn login(
         .await?;
 
     let (customer_id, redirect) = if purpose == "operator" {
-        (None, "/chat/admin/".to_string())
+        (None, state.cfg.admin_redirect.clone())
     } else {
         // Kunde und Konversation beim ersten Login anlegen.
         sqlx::query(
@@ -272,8 +272,12 @@ async fn login(
             .execute(&state.db)
             .await?;
         // Zurück auf die Seite, das Widget öffnet sich über ?chat=open.
-        let target = if lang == "en" { "/en/?chat=open" } else { "/?chat=open" };
-        (Some(customer_id), target.to_string())
+        let target = if lang == "en" {
+            state.cfg.customer_redirect_en.clone()
+        } else {
+            state.cfg.customer_redirect.clone()
+        };
+        (Some(customer_id), target)
     };
 
     let token = auth::create_session(&state.db, &purpose, &email, customer_id).await?;

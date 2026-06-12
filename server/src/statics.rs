@@ -14,8 +14,13 @@ use crate::config::Config;
 // /_astro-Assets ein Jahr immutable, Icons einen Tag; dazu die
 // Security-Header (vorher `security-headers = true`) und Kompression.
 pub fn with_static_site(app: Router, cfg: &Config) -> Router {
-    app.fallback_service(ServeDir::new(&cfg.static_dir))
-        .layer(middleware::from_fn(headers_mw))
+    // Ohne STATIC_DIR bleibt der Dienst ein reiner API-/WebSocket-Server
+    // (das Frontend kommt dann von woanders).
+    let app = match &cfg.static_dir {
+        Some(dir) => app.fallback_service(ServeDir::new(dir)),
+        None => app,
+    };
+    app.layer(middleware::from_fn(headers_mw))
         .layer(CompressionLayer::new())
 }
 
