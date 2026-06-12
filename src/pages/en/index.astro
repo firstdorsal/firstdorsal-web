@@ -7,6 +7,7 @@ import { Leistungen } from '@/components/Leistungen'
 import { Vorgehen } from '@/components/Vorgehen'
 import { Referenzen } from '@/components/Referenzen'
 import { Kontakt } from '@/components/Kontakt'
+import { ChatWidget } from '@/components/chat/ChatWidget'
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -44,6 +45,8 @@ const structuredData = {
     </main>
 
     <SiteFooter lang="en" />
+
+    <ChatWidget lang="en" client:idle />
   </div>
 
   <script

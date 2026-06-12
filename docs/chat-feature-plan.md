@@ -232,15 +232,16 @@ docs/chat-feature-plan.md   dieses Dokument
 
 ---
 
-## 9. Offene Punkte zur Bestätigung
+## 9. Entschiedene Punkte
 
-1. **Whisper-Modell:** `large-v3-turbo` (Qualität) vs. `medium`
-   (ressourcenschonend) – und ist auf turing eine GPU verfügbar?
-2. **Operator-Benachrichtigung:** Wie soll Paul über neue Nachrichten erfahren,
-   wenn das Admin-Panel nicht offen ist (E-Mail / Web-Push / beides)?
-3. **Aufbewahrungsfrist:** Wie lange sollen Konversationen + Medien gespeichert
-   bleiben (z. B. 90/180 Tage), bevor automatisch gelöscht wird?
-4. **SMTP-Details:** Host/Port/TLS-Modus, Absenderadresse, vorhandenes Konto?
-
-Nach Freigabe dieses Plans (und Klärung der offenen Punkte) starte ich mit
-**Phase 1**.
+1. **Routing:** Same-Origin-Pfad-Routing (`/chat/...`) – ohnehin ein Container.
+2. **Whisper:** **keine GPU** auf turing → CPU-Inferenz; Modell
+   `large-v3-turbo` (quantisiert) als Standard, per Konfiguration auf `medium`
+   wechselbar. Transkription läuft asynchron, kurze Wartezeit ist okay.
+3. **Aufbewahrung:** **unbegrenzt** – keine Auto-Löschung; manuelles Löschen
+   einzelner Konversationen im Admin-Panel bleibt möglich (DSGVO-Auskunft/
+   Löschung auf Anfrage, so auch in `datenschutz.astro` zu formulieren).
+4. **SMTP:** vorhandener Account, **TLS** (implicit TLS, Port 465; STARTTLS
+   konfigurierbar). Zugangsdaten via `provided-secrets.env`.
+5. **Operator-Benachrichtigung:** Standard **E-Mail** über denselben
+   SMTP-Account (Phase 5), Web-Push optional später.

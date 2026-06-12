@@ -8,8 +8,39 @@ services:
         read_only: true
         networks:
             rp:
+            chat-internal:
         security_opt:
             - no-new-privileges:true
+        # SMTP-Zugang & Operator-Adressen für den Kunden-Chat – die Datei
+        # liegt nur auf dem Server (siehe provided-secrets.env.example).
+        env_file:
+            - ../provided-secrets.env
+        environment:
+            PUBLIC_URL: "https://{{ .hostname }}"
+            WHISPER_URL: "http://firstdorsal-whisper:9000"
+        volumes:
+            # SQLite-Datenbank und Uploads des Kunden-Chats.
+            - chat-data:/data
+        depends_on:
+            - firstdorsal-whisper
+
+    # Self-hosted Transkription der Sprachnachrichten (CPU): faster-whisper
+    # hinter einer kleinen HTTP-API, nur im internen Netz erreichbar –
+    # Audiodaten verlassen den Server nicht.
+    firstdorsal-whisper:
+        container_name: firstdorsal-whisper
+        image: "docker.io/onerahmet/openai-whisper-asr-webservice:v1.9.1-cpu"
+        restart: always
+        networks:
+            chat-internal:
+        security_opt:
+            - no-new-privileges:true
+        environment:
+            ASR_ENGINE: faster_whisper
+            ASR_MODEL: "{{ .whisperModel }}"
+        volumes:
+            # Heruntergeladene Modelle überleben Container-Neustarts.
+            - whisper-models:/root/.cache
         labels:
             traefik.enable: "true"
             traefik.docker.network: rp
@@ -29,3 +60,9 @@ networks:
     rp:
         external: true
         name: rp
+    # Nur Web-Container ↔ Whisper, nicht von außen erreichbar.
+    chat-internal:
+
+volumes:
+    chat-data:
+    whisper-models:

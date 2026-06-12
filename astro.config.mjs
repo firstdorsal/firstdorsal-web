@@ -13,13 +13,27 @@ export default defineConfig({
     defaultLocale: 'de',
     locales: ['de', 'en'],
   },
-  integrations: [react(), sitemap()],
+  integrations: [
+    react(),
+    // Die Chat-Verwaltung ist nicht für Suchmaschinen gedacht.
+    sitemap({ filter: (page) => !page.includes('/chat/admin') }),
+  ],
 
   vite: {
     plugins: [tailwindcss()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
+    server: {
+      // Im Dev-Modus läuft das Chat-Backend separat (cargo run in server/,
+      // lauscht auf 8080); Astro proxyt die dynamischen Pfade dorthin –
+      // Same-Origin wie später im Container.
+      proxy: {
+        '/chat/api': 'http://localhost:8080',
+        '/chat/login': 'http://localhost:8080',
+        '/chat/ws': { target: 'http://localhost:8080', ws: true },
       },
     },
   },

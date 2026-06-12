@@ -1,0 +1,14 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import { AdminChat } from '@/components/chat/AdminChat'
+
+// Operator-Ansicht des Kunden-Chats. Komplett clientseitig (client:only),
+// weil alles hinter dem Magic-Link-Login liegt; noindex hält die Seite
+// aus den Suchmaschinen.
+---
+
+<Layout lang="de" title="firstdorsal · Chat-Verwaltung" noindex>
+  <main class="min-h-svh bg-background text-foreground">
+    <AdminChat client:only="react" />
+  </main>
+</Layout>

@@ -1,0 +1,41 @@
+# Chat-Backend + statische Auslieferung der Website in einem Binary.
+# Ersetzt den static-web-server: axum liefert das Astro-dist/ aus und
+# bedient zusätzlich /chat/api/** (REST) und /chat/ws (WebSocket).
+[package]
+name = "firstdorsal-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", features = ["ws", "macros"] }
+base64 = "0.22"
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls-tls",
+] }
+rand = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = [
+    "macros",
+    "migrate",
+    "runtime-tokio",
+    "sqlite",
+] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["compression-full", "fs", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+# Kleines, schnelles Binary für das scratch-Image.
+lto = true
+strip = true

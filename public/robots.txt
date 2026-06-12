@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# Chat-API und -Verwaltung sind nichts für Crawler.
+Disallow: /chat/
 
 Sitemap: https://firstdorsal.eu/sitemap-index.xml
