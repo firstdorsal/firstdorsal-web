@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react'
 import { Download, FileText } from 'lucide-react'
 
-import { attachmentUrl, formatSize, formatTime, type ChatMessage } from '@/lib/chat'
-import type { OutboxEntry } from '@/lib/offline'
-import type { Lang } from '@/lib/i18n'
+import { attachmentUrl, formatSize, formatTime, type ChatMessage } from '../lib/chat'
+import type { OutboxEntry } from '../lib/offline'
+import type { Lang } from '../i18n'
 
 const texte = {
   de: {

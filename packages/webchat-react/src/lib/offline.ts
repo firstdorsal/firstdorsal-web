@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@/lib/chat'
+import type { ChatMessage } from './chat'
 
 // Offline-Fähigkeit des Chats (PWA): Nachrichten jeder Art – Text wie
 // Medien-Blobs – landen bei Netzausfall in einer IndexedDB-Outbox und

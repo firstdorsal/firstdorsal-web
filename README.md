@@ -37,9 +37,13 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
   den **Kunden-Chat**: Magic-Link-Login (SMTP via lettre), SQLite (sqlx),
   WebSocket-Push, Bild-/Sprachnachrichten-Uploads, self-hosted Transkription
   über das whisper-asr-webservice – Details in `docs/chat-feature-plan.md`
+- **Chat-Frontend:** als wiederverwendbares, markenneutrales React-Paket
+  `@webchat/react` (In-Repo-pnpm-Workspace unter `packages/webchat-react`,
+  Quelltext direkt konsumiert) – Pendant zum `webchat`-Backend-Crate
 - **PWA:** Manifest + Service Worker (`public/sw.js`); der Chat sammelt
-  Nachrichten offline in einer IndexedDB-Outbox (`src/lib/offline.ts`) und
-  sendet sie beim nächsten Online-Gehen
+  Nachrichten offline in einer IndexedDB-Outbox
+  (`packages/webchat-react/src/lib/offline.ts`) und sendet sie beim nächsten
+  Online-Gehen
 - **Tests:** Vitest + Testing-Library (Unit/Komponenten), **Playwright**
   (`e2e/`) gegen den echten Rust-Server samt echtem Whisper-Container
 

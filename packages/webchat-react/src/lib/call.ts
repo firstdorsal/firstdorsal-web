@@ -4,6 +4,8 @@
 // weitergereicht; die Medien selbst laufen P2P. Genau ein aktiver Anruf
 // je Konversation.
 
+import { apiPath } from '../config'
+
 export type CallState = 'idle' | 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended'
 
 export interface CallCallbacks {
@@ -23,7 +25,7 @@ interface IceConfig {
 
 async function fetchIceServers(): Promise<RTCIceServer[]> {
   try {
-    const res = await fetch('/chat/api/ice')
+    const res = await fetch(apiPath('/ice'))
     if (!res.ok) return []
     return ((await res.json()) as IceConfig).iceServers ?? []
   } catch {

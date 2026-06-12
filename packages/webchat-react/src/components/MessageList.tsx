@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
-import type { ChatMessage } from '@/lib/chat'
+import type { ChatMessage } from '../lib/chat'
 
 // Virtualisierte Nachrichtenliste mit endlosem Scrollen nach oben: Es
 // werden nur die sichtbaren Bubbles (plus etwas Überhang) ins DOM

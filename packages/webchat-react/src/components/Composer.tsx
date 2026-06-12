@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { Mic, Paperclip, Send, Square } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import type { Lang } from '@/lib/i18n'
+import { Button } from '../ui/button'
+import type { Lang } from '../i18n'
 
 const texte = {
   de: {

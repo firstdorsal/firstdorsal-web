@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ChatWidget } from './ChatWidget'
 
-// fetch-Stub: /chat/api/me → 401 (nicht angemeldet), Magic-Link-Anfrage
-// je nach Test ok oder Rate-Limit.
+// fetch-Stub: <basePath>/api/me → 401 (nicht angemeldet), Magic-Link-Anfrage
+// je nach Test ok oder Rate-Limit. Der Standard-basePath ist '/chat'.
 function stubFetch(requestStatus = 200) {
   const mock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)

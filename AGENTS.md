@@ -25,9 +25,12 @@ Traefik, self-hosted (`deployment/`).
 
 ```
 src/                     Astro-Seite (Komponenten, Seiten, Layout, Styles)
-  components/chat/        Chat-Frontend (React-Inseln): Widget, Admin, Anrufe
-  lib/chat.ts|call.ts|offline.ts   Chat-Client (REST/WS, WebRTC, Offline-Outbox)
-  pages/chat/admin.astro  Operator-Panel (noindex)
+  pages/chat/admin.astro  Operator-Panel (noindex; bindet @webchat/react ein)
+packages/webchat-react/  Wiederverwendbares React-Frontend (pnpm-Workspace)
+  src/components/         Widget, Admin-Panel, Anruf-Overlay (React-Inseln)
+  src/lib/chat|call|offline   Chat-Client (REST/WS, WebRTC, Offline-Outbox)
+  src/config.ts          Basis-Pfad konfigurierbar (Standard /chat)
+  README.md             ← Frontend-Integrationsreferenz (Props, Theme)
 server/                  webchat – Rust-Backend (lib.rs + main.rs)
   src/{api,ws,auth,mail,whisper,turn,statics,db,config}.rs
   migrations/            SQLite-Schema (sqlx, eingebettet)
@@ -37,6 +40,10 @@ deployment/              Compose + Traefik + Secrets-Vorlage + Whisper/coturn
 docs/chat-feature-plan.md  Architektur & Phasenplan des Chat-Features
 Dockerfile               Multi-Stage: Node→Astro, dann Rust→musl (Tests inkl.)
 ```
+
+Frontend wie Backend sind **markenneutral und wiederverwendbar**: das React-UI
+als In-Repo-Paket `@webchat/react` (`workspace:*`, Quelltext direkt konsumiert),
+das Backend als `webchat`-Crate (lib + bin). Die Host-Seite bindet beide ein.
 
 ## Befehle
 

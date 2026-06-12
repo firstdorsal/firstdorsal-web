@@ -1,0 +1,111 @@
+/*
+ * Optionales Basis-Theme für @webchat/react.
+ *
+ * Die Komponenten nutzen Tailwind-v4-Utilities, die auf eine Reihe von
+ * Design-Tokens (CSS-Custom-Properties) zurückgreifen. Wer das Paket in
+ * eine bestehende Tailwind-Oberfläche einbindet, definiert diese Tokens
+ * in der Regel schon selbst – dann wird diese Datei nicht benötigt.
+ *
+ * Frische Projekte können sie als Startpunkt importieren:
+ *
+ *   @import 'tailwindcss';
+ *   @import '@webchat/react/theme.css';
+ *
+ * Außerdem müssen die Quelldateien des Pakets von Tailwind gescannt
+ * werden, damit die Klassen erzeugt werden:
+ *
+ *   @source '../node_modules/@webchat/react/src';
+ *
+ * Die Werte unten sind neutrale Graustufen-Defaults; Farben lassen sich
+ * durch Überschreiben der --color-*-Variablen an die eigene Marke
+ * anpassen. Dark-Mode schaltet `.dark` am Wurzelelement um.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --webchat-radius: 0.25rem;
+  --webchat-background: oklch(1 0 0);
+  --webchat-foreground: oklch(0.2 0 0);
+  --webchat-card: oklch(0.99 0 0);
+  --webchat-card-foreground: oklch(0.2 0 0);
+  --webchat-popover: oklch(0.99 0 0);
+  --webchat-popover-foreground: oklch(0.2 0 0);
+  --webchat-primary: oklch(0.3 0 0);
+  --webchat-primary-foreground: oklch(0.98 0 0);
+  --webchat-secondary: oklch(0.95 0 0);
+  --webchat-secondary-foreground: oklch(0.25 0 0);
+  --webchat-muted: oklch(0.95 0 0);
+  --webchat-muted-foreground: oklch(0.5 0 0);
+  --webchat-accent: oklch(0.93 0 0);
+  --webchat-accent-foreground: oklch(0.25 0 0);
+  --webchat-destructive: oklch(0.58 0.21 27);
+  --webchat-border: oklch(0.9 0 0);
+  --webchat-input: oklch(0.9 0 0);
+  --webchat-ring: oklch(0.6 0 0);
+  --webchat-brand: oklch(0.55 0.16 250);
+}
+
+.dark {
+  --webchat-background: oklch(0.16 0 0);
+  --webchat-foreground: oklch(0.95 0 0);
+  --webchat-card: oklch(0.2 0 0);
+  --webchat-card-foreground: oklch(0.95 0 0);
+  --webchat-popover: oklch(0.2 0 0);
+  --webchat-popover-foreground: oklch(0.95 0 0);
+  --webchat-primary: oklch(0.85 0 0);
+  --webchat-primary-foreground: oklch(0.16 0 0);
+  --webchat-secondary: oklch(0.26 0 0);
+  --webchat-secondary-foreground: oklch(0.95 0 0);
+  --webchat-muted: oklch(0.26 0 0);
+  --webchat-muted-foreground: oklch(0.68 0 0);
+  --webchat-accent: oklch(0.28 0 0);
+  --webchat-accent-foreground: oklch(0.95 0 0);
+  --webchat-destructive: oklch(0.66 0.19 25);
+  --webchat-border: oklch(0.95 0 0 / 14%);
+  --webchat-input: oklch(0.95 0 0 / 16%);
+  --webchat-ring: oklch(0.6 0 0);
+  --webchat-brand: oklch(0.72 0.16 250);
+}
+
+/* Tokens in den Tailwind-Theme-Namensraum heben, den die Utilities
+   (bg-card, text-brand, border-border …) erwarten. */
+@theme inline {
+  --radius-sm: calc(var(--webchat-radius) - 4px);
+  --radius-md: calc(var(--webchat-radius) - 2px);
+  --radius-lg: var(--webchat-radius);
+  --radius-xl: calc(var(--webchat-radius) + 4px);
+
+  --color-background: var(--webchat-background);
+  --color-foreground: var(--webchat-foreground);
+  --color-card: var(--webchat-card);
+  --color-card-foreground: var(--webchat-card-foreground);
+  --color-popover: var(--webchat-popover);
+  --color-popover-foreground: var(--webchat-popover-foreground);
+  --color-primary: var(--webchat-primary);
+  --color-primary-foreground: var(--webchat-primary-foreground);
+  --color-secondary: var(--webchat-secondary);
+  --color-secondary-foreground: var(--webchat-secondary-foreground);
+  --color-muted: var(--webchat-muted);
+  --color-muted-foreground: var(--webchat-muted-foreground);
+  --color-accent: var(--webchat-accent);
+  --color-accent-foreground: var(--webchat-accent-foreground);
+  --color-destructive: var(--webchat-destructive);
+  --color-border: var(--webchat-border);
+  --color-input: var(--webchat-input);
+  --color-ring: var(--webchat-ring);
+  --color-brand: var(--webchat-brand);
+}
+
+/* Zwei Utilities, die die Komponenten zusätzlich verwenden. */
+@utility label-caps {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+@utility annotation {
+  font-style: italic;
+  color: var(--webchat-brand);
+}

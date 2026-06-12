@@ -8,10 +8,10 @@ import {
 } from 'react'
 import { Mic, MicOff, Monitor, MonitorOff, Phone, PhoneOff, Video, VideoOff } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { CallSession, type CallState } from '@/lib/call'
-import type { SignalMessage } from '@/lib/chat'
-import type { Lang } from '@/lib/i18n'
+import { Button } from '../ui/button'
+import { CallSession, type CallState } from '../lib/call'
+import type { SignalMessage } from '../lib/chat'
+import type { Lang } from '../i18n'
 
 const texte = {
   de: {

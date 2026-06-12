@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Phone, Trash2, Video } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Composer } from '@/components/chat/Composer'
-import { MessageBubble } from '@/components/chat/MessageBubble'
-import { MessageList } from '@/components/chat/MessageList'
-import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
+import { Button } from '../ui/button'
+import { Composer } from './Composer'
+import { MessageBubble } from './MessageBubble'
+import { MessageList } from './MessageList'
+import { CallPanel, type CallHandle } from './CallPanel'
 import {
   applyTranscript,
   deleteConversation,
@@ -22,7 +22,7 @@ import {
   sendSignal,
   type ChatConversation,
   type ChatMessage,
-} from '@/lib/chat'
+} from '../lib/chat'
 
 // Admin-Panel für den Operator (deutschsprachig, nur für den internen
 // Gebrauch): links alle Konversationen, rechts der Verlauf mit

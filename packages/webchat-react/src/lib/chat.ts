@@ -1,6 +1,9 @@
-// REST-/WebSocket-Anbindung des Chat-Backends (axum, Same-Origin unter
-// /chat/...). Im Dev-Modus leitet Astros Vite-Proxy die Aufrufe auf das
-// lokal laufende Backend um (astro.config.mjs).
+// REST-/WebSocket-Anbindung des webchat-Backends (axum, Same-Origin unter
+// `<basePath>/...`, Standard `/chat`). Der Basis-Pfad ist über
+// configureWebchat() konfigurierbar; im Dev-Modus leitet der Vite-Proxy
+// der Host-App die Aufrufe an das lokal laufende Backend um.
+
+import { apiPath, socketUrl } from '../config'
 
 export type ChatRole = 'customer' | 'operator'
 
@@ -56,13 +59,13 @@ async function asJson<T>(res: Response): Promise<T> {
 
 /** null = nicht angemeldet. */
 export async function fetchMe(): Promise<Me | null> {
-  const res = await fetch('/chat/api/me')
+  const res = await fetch(apiPath('/me'))
   if (res.status === 401) return null
   return asJson<Me>(res)
 }
 
 export function requestMagicLink(email: string, lang: string): Promise<Response> {
-  return fetch('/chat/api/auth/request', {
+  return fetch(apiPath('/auth/request'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, lang }),
@@ -70,7 +73,7 @@ export function requestMagicLink(email: string, lang: string): Promise<Response>
 }
 
 export async function logout(): Promise<void> {
-  await fetch('/chat/api/auth/logout', { method: 'POST' })
+  await fetch(apiPath('/auth/logout'), { method: 'POST' })
 }
 
 // Pagination fürs endlose Scrollen: ohne `before` die neuesten Nachrichten,
@@ -85,12 +88,12 @@ function pageQuery(before?: number, limit = PAGE_SIZE): string {
 }
 
 export async function fetchMessages(before?: number): Promise<ChatMessage[]> {
-  return asJson(await fetch(`/chat/api/messages?${pageQuery(before)}`))
+  return asJson(await fetch(apiPath(`/messages?${pageQuery(before)}`)))
 }
 
 export async function sendMessage(text: string): Promise<ChatMessage> {
   return asJson(
-    await fetch('/chat/api/messages', {
+    await fetch(apiPath('/messages'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -106,12 +109,12 @@ function mediaForm(file: Blob, filename: string): FormData {
 
 export async function sendMedia(file: Blob, filename: string): Promise<ChatMessage> {
   return asJson(
-    await fetch('/chat/api/messages/media', { method: 'POST', body: mediaForm(file, filename) }),
+    await fetch(apiPath('/messages/media'), { method: 'POST', body: mediaForm(file, filename) }),
   )
 }
 
 export function attachmentUrl(id: number): string {
-  return `/chat/api/attachments/${id}`
+  return apiPath(`/attachments/${id}`)
 }
 
 /** Dateigröße kompakt formatieren (z. B. „2,4 MB"). */
@@ -128,19 +131,19 @@ export function formatSize(bytes: number, lang: string): string {
 }
 
 export async function fetchConversations(): Promise<ChatConversation[]> {
-  return asJson(await fetch('/chat/api/admin/conversations'))
+  return asJson(await fetch(apiPath('/admin/conversations')))
 }
 
 export async function fetchConversationMessages(
   id: number,
   before?: number,
 ): Promise<ChatMessage[]> {
-  return asJson(await fetch(`/chat/api/admin/conversations/${id}/messages?${pageQuery(before)}`))
+  return asJson(await fetch(apiPath(`/admin/conversations/${id}/messages?${pageQuery(before)}`)))
 }
 
 export async function sendOperatorMessage(id: number, text: string): Promise<ChatMessage> {
   return asJson(
-    await fetch(`/chat/api/admin/conversations/${id}/messages`, {
+    await fetch(apiPath(`/admin/conversations/${id}/messages`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -154,7 +157,7 @@ export async function sendOperatorMedia(
   filename: string,
 ): Promise<ChatMessage> {
   return asJson(
-    await fetch(`/chat/api/admin/conversations/${id}/media`, {
+    await fetch(apiPath(`/admin/conversations/${id}/media`), {
       method: 'POST',
       body: mediaForm(file, filename),
     }),
@@ -162,7 +165,7 @@ export async function sendOperatorMedia(
 }
 
 export async function deleteConversation(id: number): Promise<void> {
-  const res = await fetch(`/chat/api/admin/conversations/${id}`, { method: 'DELETE' })
+  const res = await fetch(apiPath(`/admin/conversations/${id}`), { method: 'DELETE' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
@@ -184,8 +187,7 @@ export interface SocketHandlers {
 /** Push-Kanal: Der Server schickt neue Nachrichten, Transkripte und die
  *  Anruf-Signalisierung; Chat-Nachrichten werden per REST gesendet. */
 export function openChatSocket(handlers: SocketHandlers): WebSocket {
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-  const ws = new WebSocket(`${proto}://${location.host}/chat/ws`)
+  const ws = new WebSocket(socketUrl())
   ws.addEventListener('message', (ev) => {
     try {
       const data = JSON.parse(ev.data as string)

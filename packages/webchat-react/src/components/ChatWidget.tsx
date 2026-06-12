@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MessageCircle, Phone, Video, X } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Composer } from '@/components/chat/Composer'
-import { MessageBubble, PendingBubble } from '@/components/chat/MessageBubble'
-import { MessageList } from '@/components/chat/MessageList'
-import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
+import { Button } from '../ui/button'
+import { Composer } from './Composer'
+import { MessageBubble, PendingBubble } from './MessageBubble'
+import { MessageList } from './MessageList'
+import { CallPanel, type CallHandle } from './CallPanel'
 import {
   applyTranscript,
   fetchMe,
@@ -18,7 +18,7 @@ import {
   sendMessage,
   sendSignal,
   type ChatMessage,
-} from '@/lib/chat'
+} from '../lib/chat'
 import {
   cacheMessages,
   cachedMessages,
@@ -26,16 +26,19 @@ import {
   outboxAll,
   outboxRemove,
   type OutboxEntry,
-} from '@/lib/offline'
-import type { Lang } from '@/lib/i18n'
+} from '../lib/offline'
+import type { Lang } from '../i18n'
 
+// Markenneutrale Texte: der Name des Ansprechpartners (`agentName`) und
+// der Firmenname (`brandName`) werden als Props hereingereicht, damit das
+// Widget ohne Quelltextänderung für beliebige Betreiber passt.
 const texte = {
   de: {
     launcher: 'Chat öffnen',
     schliessen: 'Chat schließen',
     titel: 'Direkter Draht',
-    intro:
-      'Schreiben Sie uns direkt – Sie chatten mit Paul persönlich, nicht mit einem Bot.',
+    intro: (agent: string) =>
+      `Schreiben Sie uns direkt – Sie chatten mit ${agent} persönlich, nicht mit einem Bot.`,
     emailLabel: 'Ihre E-Mail-Adresse',
     linkSenden: 'Anmeldelink senden',
     datenschutzVor: 'Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben gemäß ',
@@ -55,13 +58,13 @@ const texte = {
     fehlerMail: 'Der Link konnte nicht verschickt werden – bitte später erneut versuchen.',
     fehlerSenden: 'Senden fehlgeschlagen – bitte erneut versuchen.',
     ich: 'Sie',
-    firma: 'firstdorsal',
   },
   en: {
     launcher: 'Open chat',
     schliessen: 'Close chat',
     titel: 'Direct line',
-    intro: 'Message us directly – you chat with Paul in person, not with a bot.',
+    intro: (agent: string) =>
+      `Message us directly – you chat with ${agent} in person, not with a bot.`,
     emailLabel: 'Your email address',
     linkSenden: 'Send sign-in link',
     datenschutzVor: 'By submitting you consent to the processing of your data as described in our ',
@@ -81,8 +84,20 @@ const texte = {
     fehlerMail: 'The link could not be sent – please try again later.',
     fehlerSenden: 'Sending failed – please try again.',
     ich: 'You',
-    firma: 'firstdorsal',
   },
+}
+
+export interface ChatWidgetProps {
+  /** Sprache der Oberfläche (Standard 'de'). */
+  lang?: Lang
+  /** Anzeigename des Betreibers für fremde Nachrichten (Standard 'firstdorsal'). */
+  brandName?: string
+  /** Name des persönlichen Ansprechpartners im Intro-Text (Standard 'Paul'). */
+  agentName?: string
+  /** Ziel des Datenschutz-Links im Einwilligungshinweis (Standard '/datenschutz'). */
+  privacyHref?: string
+  /** Ziel des Links zur Operator-Verwaltung (Standard '/chat/admin/'). */
+  adminHref?: string
 }
 
 type Phase = 'laden' | 'anonym' | 'verschickt' | 'chat' | 'operator'
@@ -93,7 +108,13 @@ type Phase = 'laden' | 'anonym' | 'verschickt' | 'chat' | 'operator'
 // per WebSocket (Auto-Reconnect), gesendet wird per REST. Offline gehen
 // Nachrichten jeder Art in die IndexedDB-Outbox (PWA) und werden beim
 // nächsten Online-Gehen zugestellt.
-export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
+export function ChatWidget({
+  lang = 'de',
+  brandName = 'firstdorsal',
+  agentName = 'Paul',
+  privacyHref = '/datenschutz',
+  adminHref = '/chat/admin/',
+}: ChatWidgetProps) {
   const t = texte[lang]
   const [open, setOpen] = useState(false)
   const [phase, setPhase] = useState<Phase>('laden')
@@ -352,7 +373,7 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
 
       {phase === 'anonym' && (
         <form onSubmit={linkAnfordern} className="flex flex-1 flex-col gap-4 p-5">
-          <p className="text-sm/relaxed text-muted-foreground">{t.intro}</p>
+          <p className="text-sm/relaxed text-muted-foreground">{t.intro(agentName)}</p>
           <label className="label-caps text-xs" htmlFor="chat-email">
             {t.emailLabel}
           </label>
@@ -369,7 +390,7 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
           {fehler && <p className="text-sm text-destructive">{fehler}</p>}
           <p className="annotation mt-auto text-xs text-muted-foreground">
             {t.datenschutzVor}
-            <a href="/datenschutz" className="underline underline-offset-2">
+            <a href={privacyHref} className="underline underline-offset-2">
               {t.datenschutzLink}
             </a>
             {t.datenschutzNach}
@@ -387,7 +408,7 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
         <div className="flex flex-1 flex-col justify-center gap-4 p-5 text-center">
           <p className="text-sm/relaxed">{t.operatorHinweis}</p>
           <a
-            href="/chat/admin/"
+            href={adminHref}
             className="text-sm font-medium text-brand underline underline-offset-2"
           >
             {t.adminLink}
@@ -410,7 +431,7 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
               <MessageBubble
                 message={m}
                 self={m.sender === 'customer'}
-                senderLabel={m.sender === 'customer' ? t.ich : t.firma}
+                senderLabel={m.sender === 'customer' ? t.ich : brandName}
                 lang={lang}
               />
             )}

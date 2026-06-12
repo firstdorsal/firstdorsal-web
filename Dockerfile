@@ -15,7 +15,11 @@ ENV CI=true \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 # pnpm-Version kommt aus dem packageManager-Feld der package.json (corepack).
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+# Workspace-Manifeste (Wurzel + In-Repo-Pakete unter packages/) vor dem
+# Install, damit der Lockfile aufgeht und der Layer-Cache greift. Der
+# Quelltext von @webchat/react wird direkt konsumiert (kein Extra-Build).
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages packages
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 COPY astro.config.mjs tsconfig.json components.json vitest.config.ts ./

@@ -1,0 +1,6 @@
+# pnpm-Workspace: die Astro-Seite (Repo-Wurzel) plus die wiederverwendbaren
+# In-Repo-Pakete unter packages/. Der Host bindet sie per `workspace:*` ein;
+# importiert wird der TypeScript-Quelltext direkt (kein separater Build-Schritt,
+# Astro/Vite transpiliert mit).
+packages:
+  - packages/*
