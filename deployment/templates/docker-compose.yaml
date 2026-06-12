@@ -29,7 +29,7 @@ services:
     # Audiodaten verlassen den Server nicht.
     firstdorsal-whisper:
         container_name: firstdorsal-whisper
-        image: "docker.io/onerahmet/openai-whisper-asr-webservice:v1.9.1-cpu"
+        image: "docker.io/onerahmet/openai-whisper-asr-webservice:v1.9.1"
         restart: always
         networks:
             chat-internal:

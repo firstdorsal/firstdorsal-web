@@ -220,15 +220,23 @@ docs/chat-feature-plan.md   dieses Dokument
   Astro-`dist/` ausliefert (Header/Caching/Kompression wie SWS, `/health`) und
   den SWS im Image ersetzt; SQLite; Magic-Link (Kunde + Operator) + Sessions +
   SMTP (`lettre`); WebSocket-Text-Chat; Widget (Launcher → E-Mail → Chat) +
-  Basis-Admin-Panel; Multi-Stage-Dockerfile, Volume, Secrets, CI-Build.
-  **Lauffähiges Ende-zu-Ende-Fundament.**
-- **Phase 2 – Bilder:** Upload, Limits/Thumbnails, Anzeige in Widget & Admin.
-- **Phase 3 – Sprachnachrichten:** `MediaRecorder`-Aufnahme, Upload, Audio-Player.
-- **Phase 4 – Transkription:** Whisper-Container, asynchroner Job, Transkript
-  unter der Sprachnachricht (de/en).
-- **Phase 5 – Politur:** Operator-Benachrichtigung (E-Mail/Web-Push bei neuer
-  Nachricht), Tipp-/Lese-Indikatoren, Aufbewahrung/Auto-Löschung, Rate-Limits,
-  `datenschutz.astro`-Update, Tests (Vitest + `cargo test`).
+  Basis-Admin-Panel; Multi-Stage-Dockerfile, Volume, Secrets, CI-Build. ✅
+- **Phase 2 – Bilder:** Multipart-Upload (Allowlist, Limits), content-addressed
+  Blobs, authentifizierte Attachment-Route, Anzeige in Widget & Admin. ✅
+- **Phase 3 – Sprachnachrichten:** `MediaRecorder`-Aufnahme im gemeinsamen
+  Composer, Upload, Audio-Player. ✅
+- **Phase 4 – Transkription:** whisper-asr-webservice-Container (faster-whisper,
+  CPU), asynchroner Job, Transkript per WebSocket nachgereicht. ✅
+- **Phase 4b – PWA & Offline:** Manifest + Service Worker (installierbar,
+  Seiten/Assets offline); Chat-Outbox in IndexedDB – Text wie Medien werden
+  offline gesammelt und beim Online-Gehen gesendet, Verlauf offline lesbar. ✅
+- **Phase 4c – Playwright-E2E:** komplette Abläufe gegen den echten Stack
+  (Rust-Server + echtes Whisper-Image mit tiny-Modell): Magic-Link-Login,
+  Text live in beide Richtungen, Bild, Sprachnachricht aus echter Sprachprobe
+  (Fake-Mikrofon) mit echter Transkription, Offline-Outbox-Roundtrip. ✅
+- **Phase 5 – Politur (offen):** Operator-Benachrichtigung per E-Mail bei
+  neuer Nachricht, Tipp-/Lese-Indikatoren, `datenschutz.astro`-Update
+  (Pflicht vor Launch!), 512px-Maskable-Icon fürs Manifest, CSP.
 
 ---
 

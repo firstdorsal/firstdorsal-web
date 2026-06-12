@@ -17,4 +17,5 @@ exec env \
     MAIL_FILE_DIR="$(pwd)/e2e/.tmp/mails" \
     OPERATOR_EMAILS=operator@firstdorsal.eu \
     WHISPER_URL=http://localhost:8799 \
+    WHISPER_LANGUAGE=de \
     cargo run --manifest-path server/Cargo.toml

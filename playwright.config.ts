@@ -1,9 +1,14 @@
+import path from 'node:path'
+
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E-Tests gegen den echten Rust-Server (liefert dist/ aus wie in
-// Produktion). Mails landen als Dateien in e2e/.tmp/mails (MAIL_FILE_DIR),
-// die Transkription beantwortet ein Mock-Whisper (e2e/mock-whisper.mjs).
+// E2E-Tests gegen den echten Stack: Rust-Server (liefert dist/ aus wie in
+// Produktion) und das ECHTE whisper-asr-webservice im Docker-Container
+// (Produktions-Image, tiny-Modell). Mails landen als Dateien in
+// e2e/.tmp/mails (MAIL_FILE_DIR). Die Sprachnachricht kommt aus einem
+// echten Sprach-Fixture, das Chromium als Fake-Mikrofon einspielt.
 // Ein Worker, da die Tests eine gemeinsame SQLite-DB teilen.
+// Voraussetzung: Docker (für Whisper).
 export default defineConfig({
   testDir: './e2e',
   workers: 1,
@@ -23,11 +28,16 @@ export default defineConfig({
       dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
-        // Fake-Mikrofon für die Sprachnachrichten-Tests.
+        // Fake-Mikrofon, das die echte Sprachprobe abspielt – die
+        // Aufnahme im MediaRecorder enthält damit echte Sprache.
         launchOptions: {
           args: [
             '--use-fake-device-for-media-stream',
             '--use-fake-ui-for-media-stream',
+            `--use-file-for-fake-audio-capture=${path.join(
+              import.meta.dirname,
+              'e2e/fixtures/sprachprobe.wav',
+            )}`,
           ],
         },
       },
@@ -35,9 +45,11 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'node e2e/mock-whisper.mjs',
+      // Erster Lauf zieht Image + Modell – danach aus dem Cache-Volume.
+      command: 'bash e2e/start-whisper.sh',
       port: 8799,
       reuseExistingServer: true,
+      timeout: 600_000,
     },
     {
       command: 'bash e2e/start-server.sh',

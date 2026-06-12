@@ -80,8 +80,16 @@ async fn transcribe(state: &SharedState, path: &PathBuf, mime: &str) -> anyhow::
         .file_name("audio")
         .mime_str(mime.split(';').next().unwrap_or("audio/webm"))?;
     let form = reqwest::multipart::Form::new().part("audio_file", part);
+    let language = state
+        .cfg
+        .whisper_language
+        .as_ref()
+        .map(|l| format!("&language={l}"))
+        .unwrap_or_default();
     let res = reqwest::Client::new()
-        .post(format!("{base}/asr?task=transcribe&encode=true&output=json"))
+        .post(format!(
+            "{base}/asr?task=transcribe&encode=true&output=json{language}"
+        ))
         .multipart(form)
         // CPU-Inferenz darf dauern, aber nicht ewig.
         .timeout(Duration::from_secs(600))

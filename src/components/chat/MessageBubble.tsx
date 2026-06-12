@@ -62,7 +62,9 @@ export function MessageBubble({
             <p className="annotation mt-1 text-xs text-muted-foreground">{t.transkriptLaeuft}</p>
           )}
           {a.transcript_status === 'done' && a.transcript && (
-            <p className="annotation mt-1 text-xs">„{a.transcript}“</p>
+            <p data-testid="transcript" className="annotation mt-1 text-xs">
+              „{a.transcript}“
+            </p>
           )}
         </>
       )}

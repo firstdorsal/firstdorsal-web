@@ -5,7 +5,10 @@ import { expect, test, type Browser } from '@playwright/test'
 import { ADMIN_STATE, kundeAnmelden, neueKundenMail } from './helpers'
 
 const TESTBILD = path.join(import.meta.dirname, 'fixtures/testbild.png')
-const TRANSKRIPT = 'Dies ist ein Beispiel-Transkript.'
+// Die Sprachprobe (fixtures/sprachprobe.wav) sagt: "Hallo, ich
+// interessiere mich für eine neue Website für meine Firma." – das
+// tiny-Modell muss davon zumindest die Kernbegriffe treffen.
+const TRANSKRIPT_MUSTER = /website|firma|interessiere/i
 
 // Operator-Sicht in eigenem Browser-Kontext (Session aus dem Setup-Projekt).
 async function adminSeite(browser: Browser) {
@@ -51,23 +54,28 @@ test('Bildnachricht kommt beim Operator an', async ({ page, browser }) => {
   await context.close()
 })
 
-test('Sprachnachricht wird aufgenommen und transkribiert', async ({ page, browser }) => {
+test('Sprachnachricht wird aufgenommen und echt transkribiert', async ({ page, browser }) => {
+  // Beim allerersten Lauf lädt der Whisper-Dienst noch sein Modell.
+  test.setTimeout(300_000)
   const email = neueKundenMail('voice')
   await kundeAnmelden(page, email)
 
-  // Fake-Mikrofon (Chromium-Flag) liefert einen Ton; kurz aufnehmen.
+  // Das Fake-Mikrofon spielt die echte Sprachprobe ein (~5,3 s) – lange
+  // genug aufnehmen, damit der ganze Satz drin ist.
   await page.getByRole('button', { name: 'Sprachnachricht aufnehmen' }).click()
-  await page.waitForTimeout(1500)
+  await page.waitForTimeout(6_500)
   await page.getByRole('button', { name: 'Aufnahme beenden und senden' }).click()
 
   await expect(page.locator('audio')).toBeVisible()
-  // Das Transkript (Mock-Whisper) wird asynchron per WebSocket nachgereicht.
-  await expect(page.getByText(TRANSKRIPT)).toBeVisible({ timeout: 20_000 })
+  // Echte faster-whisper-Transkription, nachgereicht per WebSocket.
+  await expect(page.getByTestId('transcript')).toHaveText(TRANSKRIPT_MUSTER, {
+    timeout: 240_000,
+  })
 
   const { context, page: admin } = await adminSeite(browser)
   await admin.getByRole('button', { name: new RegExp(email) }).click()
   await expect(admin.locator('audio')).toBeVisible()
-  await expect(admin.getByText(TRANSKRIPT)).toBeVisible()
+  await expect(admin.getByTestId('transcript')).toHaveText(TRANSKRIPT_MUSTER)
   await context.close()
 })
 

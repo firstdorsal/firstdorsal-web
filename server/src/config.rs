@@ -33,6 +33,9 @@ pub struct Config {
     /// Basis-URL des Whisper-Dienstes (whisper-asr-webservice); None =
     /// Sprachnachrichten ohne Transkription.
     pub whisper_url: Option<String>,
+    /// Erzwungene Transkriptionssprache (z. B. "de"); None = Autodetect.
+    /// Kleine Modelle (E2E: tiny) brauchen die Hilfe, große nicht.
+    pub whisper_language: Option<String>,
     /// Test-/Dev-Modus: Mails als Dateien in dieses Verzeichnis schreiben
     /// statt sie zu versenden (genutzt von den Playwright-E2E-Tests).
     pub mail_file_dir: Option<PathBuf>,
@@ -77,6 +80,9 @@ impl Config {
                 .ok()
                 .filter(|v| !v.is_empty())
                 .map(|v| v.trim_end_matches('/').to_string()),
+            whisper_language: std::env::var("WHISPER_LANGUAGE")
+                .ok()
+                .filter(|v| !v.is_empty()),
             mail_file_dir: std::env::var("MAIL_FILE_DIR")
                 .ok()
                 .filter(|v| !v.is_empty())
