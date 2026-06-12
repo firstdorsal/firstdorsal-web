@@ -4,11 +4,14 @@
 
 export type ChatRole = 'customer' | 'operator'
 
+export type AttachmentKind = 'image' | 'voice' | 'video' | 'file'
+
 export interface ChatAttachment {
   id: number
-  kind: 'image' | 'voice'
+  kind: AttachmentKind
   mime: string
   size: number
+  filename: string | null
   transcript: string | null
   transcript_status: 'pending' | 'done' | 'failed' | null
 }
@@ -17,7 +20,7 @@ export interface ChatMessage {
   id: number
   conversation_id: number
   sender: ChatRole
-  kind: 'text' | 'image' | 'voice'
+  kind: 'text' | AttachmentKind
   body_text: string | null
   created_at: number
   attachment: ChatAttachment | null
@@ -98,6 +101,19 @@ export async function sendMedia(file: Blob, filename: string): Promise<ChatMessa
 
 export function attachmentUrl(id: number): string {
   return `/chat/api/attachments/${id}`
+}
+
+/** Dateigröße kompakt formatieren (z. B. „2,4 MB"). */
+export function formatSize(bytes: number, lang: string): string {
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit++
+  }
+  const n = unit === 0 ? value : value.toFixed(1)
+  return `${String(n).replace('.', lang === 'en' ? '.' : ',')} ${units[unit]}`
 }
 
 export async function fetchConversations(): Promise<ChatConversation[]> {

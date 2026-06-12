@@ -20,7 +20,7 @@ CREATE TABLE messages (
     id INTEGER PRIMARY KEY,
     conversation_id INTEGER NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
     sender TEXT NOT NULL CHECK (sender IN ('customer', 'operator')),
-    kind TEXT NOT NULL DEFAULT 'text' CHECK (kind IN ('text', 'image', 'voice')),
+    kind TEXT NOT NULL DEFAULT 'text' CHECK (kind IN ('text', 'image', 'voice', 'video', 'file')),
     body_text TEXT,
     attachment_id INTEGER,
     created_at INTEGER NOT NULL,

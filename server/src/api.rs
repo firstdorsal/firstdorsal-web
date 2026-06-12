@@ -36,23 +36,53 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/chat/api/admin/conversations/{id}/media", post(admin_send_media))
         .route("/chat/api/admin/conversations/{id}", delete(admin_delete))
-        // Uploads: Sprachnachrichten bis 25 MB, plus Multipart-Overhead.
-        .layer(DefaultBodyLimit::max(26 * 1024 * 1024))
+        // Uploads bis MAX_UPLOAD_BYTES (Videos!), plus Multipart-Overhead.
+        .layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES + 1024 * 1024))
         .with_state(state)
 }
 
-// Upload-Grenzen und MIME-Allowlist (kein SVG – kann Skripte enthalten).
-const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
-const MAX_VOICE_BYTES: usize = 25 * 1024 * 1024;
-const IMAGE_MIMES: [&str; 4] = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const VOICE_MIMES: [&str; 6] = [
-    "audio/webm",
-    "audio/ogg",
-    "audio/mp4",
-    "audio/mpeg",
-    "audio/wav",
-    "audio/x-m4a",
-];
+// Obergrenze für jeden Upload – großzügig genug für kurze Videos. Wer
+// größere Dateien teilen muss, lädt sie extern hoch und schickt den Link.
+const MAX_UPLOAD_BYTES: usize = 100 * 1024 * 1024;
+
+// Art eines Anhangs aus dem MIME-Typ ableiten. Alles ist erlaubt; die
+// Kategorie steuert nur die Darstellung (Bild/Audio/Video inline,
+// alles andere als Download). SVG zählt bewusst als generische Datei
+// (kann Skripte enthalten – wird deshalb nie inline gerendert).
+fn attachment_kind(mime: &str) -> &'static str {
+    match mime {
+        "image/svg+xml" => "file",
+        m if m.starts_with("image/") => "image",
+        m if m.starts_with("audio/") => "voice",
+        m if m.starts_with("video/") => "video",
+        _ => "file",
+    }
+}
+
+/// Anhänge dürfen nur dann im Browser dargestellt werden (inline), wenn
+/// das gefahrlos ist – sonst erzwingt der Download-Header die Speicherung.
+fn inline_safe(mime: &str) -> bool {
+    mime == "application/pdf"
+        || (mime != "image/svg+xml"
+            && (mime.starts_with("image/")
+                || mime.starts_with("audio/")
+                || mime.starts_with("video/")))
+}
+
+/// Dateiname auf einen Zeilen-tauglichen, harmlosen Rest reduzieren.
+fn sanitize_filename(name: &str) -> String {
+    let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
+    let cleaned: String = base
+        .chars()
+        .filter(|c| !c.is_control() && *c != '"')
+        .take(200)
+        .collect();
+    if cleaned.trim().is_empty() {
+        "datei".to_string()
+    } else {
+        cleaned
+    }
+}
 
 // Fehler als knappes JSON; interne Fehler landen im Log, nicht beim Client.
 struct ApiError(StatusCode, &'static str);
@@ -272,6 +302,7 @@ fn message_json(row: &SqliteRow) -> Value {
                 "kind": row.get::<String, _>("a_kind"),
                 "mime": row.get::<String, _>("a_mime"),
                 "size": row.get::<i64, _>("a_size"),
+                "filename": row.get::<Option<String>, _>("a_filename"),
                 "transcript": row.get::<Option<String>, _>("a_transcript"),
                 "transcript_status": row.get::<Option<String>, _>("a_status"),
             })
@@ -290,7 +321,7 @@ fn message_json(row: &SqliteRow) -> Value {
 
 const MESSAGE_SELECT: &str = "SELECT m.id, m.conversation_id, m.sender, m.kind, m.body_text, \
             m.created_at, a.id AS a_id, a.kind AS a_kind, a.mime AS a_mime, a.size AS a_size, \
-            a.transcript AS a_transcript, a.transcript_status AS a_status \
+            a.filename AS a_filename, a.transcript AS a_transcript, a.transcript_status AS a_status \
      FROM messages m LEFT JOIN attachments a ON a.id = m.attachment_id";
 
 async fn list_messages(state: &SharedState, conversation_id: i64) -> ApiResult<Json<Value>> {
@@ -348,9 +379,9 @@ async fn insert_message(
 }
 
 /// Nimmt das Multipart-Feld "file" an, legt den Blob content-addressed
-/// unter DATA_DIR/uploads ab und hängt ihn als Bild- oder Sprachnachricht
-/// an die Konversation. Sprachnachrichten gehen anschließend asynchron
-/// zur Transkription.
+/// unter DATA_DIR/uploads ab und hängt ihn als Bild-, Sprach-, Video-
+/// oder generische Dateinachricht an die Konversation. Sprachnachrichten
+/// gehen anschließend asynchron zur Transkription.
 async fn save_media(
     state: &SharedState,
     conversation_id: i64,
@@ -364,23 +395,20 @@ async fn save_media(
             _ => return Err(ApiError(StatusCode::UNPROCESSABLE_ENTITY, "missing_file")),
         }
     };
+    let filename = field.file_name().map(sanitize_filename);
     // MediaRecorder liefert z. B. "audio/webm;codecs=opus" – für die
-    // Allowlist zählt der Basistyp.
+    // Kategorie zählt der Basistyp; fehlt er, generische Datei.
     let mime_full = field.content_type().unwrap_or("").to_string();
-    let mime = mime_full.split(';').next().unwrap_or("").trim().to_string();
-    let kind = if IMAGE_MIMES.contains(&mime.as_str()) {
-        "image"
-    } else if VOICE_MIMES.contains(&mime.as_str()) {
-        "voice"
-    } else {
-        return Err(ApiError(StatusCode::UNPROCESSABLE_ENTITY, "unsupported_type"));
-    };
+    let mut mime = mime_full.split(';').next().unwrap_or("").trim().to_string();
+    if mime.is_empty() {
+        mime = "application/octet-stream".to_string();
+    }
+    let kind = attachment_kind(&mime);
     let bytes = field
         .bytes()
         .await
         .map_err(|_| ApiError(StatusCode::PAYLOAD_TOO_LARGE, "too_large"))?;
-    let max = if kind == "image" { MAX_IMAGE_BYTES } else { MAX_VOICE_BYTES };
-    if bytes.is_empty() || bytes.len() > max {
+    if bytes.is_empty() || bytes.len() > MAX_UPLOAD_BYTES {
         return Err(ApiError(StatusCode::PAYLOAD_TOO_LARGE, "too_large"));
     }
 
@@ -403,13 +431,14 @@ async fn save_media(
     let transcript_status = (kind == "voice" && state.cfg.whisper_url.is_some()).then_some("pending");
     let created_at = now();
     let attachment_id = sqlx::query(
-        "INSERT INTO attachments (kind, mime, size, sha256, transcript_status, created_at) \
-         VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO attachments (kind, mime, size, sha256, filename, transcript_status, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(kind)
     .bind(&mime)
     .bind(bytes.len() as i64)
     .bind(&sha256)
+    .bind(&filename)
     .bind(transcript_status)
     .bind(created_at)
     .execute(&state.db)
@@ -445,6 +474,7 @@ async fn save_media(
             "kind": kind,
             "mime": mime,
             "size": bytes.len(),
+            "filename": filename,
             "transcript": Value::Null,
             "transcript_status": transcript_status,
         },
@@ -476,7 +506,7 @@ async fn get_attachment(
         .await
         .ok_or(UNAUTHORIZED)?;
     let row = sqlx::query(
-        "SELECT a.mime, a.sha256, m.conversation_id FROM attachments a \
+        "SELECT a.mime, a.sha256, a.filename, m.conversation_id FROM attachments a \
          JOIN messages m ON m.attachment_id = a.id WHERE a.id = ?",
     )
     .bind(id)
@@ -495,15 +525,27 @@ async fn get_attachment(
     }
     let mime: String = row.get("mime");
     let sha256: String = row.get("sha256");
+    let filename: Option<String> = row.get("filename");
+    // Nur gefahrlose Medientypen inline anzeigen; alles andere als
+    // Download erzwingen (verhindert z. B. HTML/SVG-XSS aus Uploads).
+    let name = filename.as_deref().map(sanitize_filename).unwrap_or_else(|| "datei".into());
+    let disposition = if inline_safe(&mime) {
+        format!("inline; filename=\"{name}\"")
+    } else {
+        format!("attachment; filename=\"{name}\"")
+    };
+    // application/octet-stream verhindert MIME-Sniffing für unsichere Typen.
+    let served_mime = if inline_safe(&mime) { mime } else { "application/octet-stream".to_string() };
     let bytes = tokio::fs::read(state.cfg.data_dir.join("uploads").join(&sha256))
         .await
         .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
     Ok((
         [
-            (header::CONTENT_TYPE, mime),
-            (header::CONTENT_DISPOSITION, "inline".to_string()),
+            (header::CONTENT_TYPE, served_mime),
+            (header::CONTENT_DISPOSITION, disposition),
             // Content-addressed: darf der Browser dauerhaft (privat) cachen.
             (header::CACHE_CONTROL, "private, max-age=31536000, immutable".to_string()),
+            (header::X_CONTENT_TYPE_OPTIONS, "nosniff".to_string()),
         ],
         bytes,
     )

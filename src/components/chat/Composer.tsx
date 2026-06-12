@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, Mic, Send, Square } from 'lucide-react'
+import { Mic, Paperclip, Send, Square } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { Lang } from '@/lib/i18n'
@@ -8,7 +8,8 @@ const texte = {
   de: {
     placeholder: 'Nachricht schreiben …',
     senden: 'Nachricht senden',
-    bild: 'Bild anhängen',
+    datei: 'Datei anhängen (Bild, Video, Dokument …)',
+    zuGross: 'Datei ist zu groß (max. 100 MB).',
     aufnehmen: 'Sprachnachricht aufnehmen',
     stoppen: 'Aufnahme beenden und senden',
     nimmtAuf: 'Aufnahme läuft …',
@@ -17,13 +18,17 @@ const texte = {
   en: {
     placeholder: 'Write a message …',
     senden: 'Send message',
-    bild: 'Attach image',
+    datei: 'Attach file (image, video, document …)',
+    zuGross: 'File is too large (max. 100 MB).',
     aufnehmen: 'Record voice message',
     stoppen: 'Stop recording and send',
     nimmtAuf: 'Recording …',
     keinMikro: 'Microphone not available.',
   },
 }
+
+// Muss zur Server-Grenze (MAX_UPLOAD_BYTES) passen.
+const MAX_UPLOAD = 100 * 1024 * 1024
 
 // Dateiendung passend zum Container, den der MediaRecorder gewählt hat.
 function voiceFilename(mime: string): string {
@@ -48,7 +53,7 @@ export function Composer({
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [recording, setRecording] = useState(false)
-  const [mikroFehler, setMikroFehler] = useState(false)
+  const [fehler, setFehler] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
 
@@ -65,10 +70,16 @@ export function Composer({
     }
   }
 
-  async function bildGewaehlt(e: React.ChangeEvent<HTMLInputElement>) {
+  async function dateiGewaehlt(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = '' // gleiche Datei erneut wählbar
-    if (file) await onMedia(file, file.name)
+    if (!file) return
+    if (file.size > MAX_UPLOAD) {
+      setFehler(t.zuGross)
+      return
+    }
+    setFehler('')
+    await onMedia(file, file.name)
   }
 
   async function aufnahmeUmschalten() {
@@ -76,12 +87,12 @@ export function Composer({
       recorderRef.current?.stop()
       return
     }
-    setMikroFehler(false)
+    setFehler('')
     let stream: MediaStream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
-      setMikroFehler(true)
+      setFehler(t.keinMikro)
       return
     }
     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) =>
@@ -106,23 +117,18 @@ export function Composer({
 
   return (
     <form onSubmit={textSenden} className="border-t border-border p-3">
-      {mikroFehler && <p className="mb-2 text-xs text-destructive">{t.keinMikro}</p>}
+      {fehler && <p className="mb-2 text-xs text-destructive">{fehler}</p>}
       <div className="flex items-center gap-1.5">
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          hidden
-          onChange={bildGewaehlt}
-        />
+        {/* Beliebige Datei – Bilder, Videos, PDFs, Dokumente … */}
+        <input ref={fileRef} type="file" hidden onChange={dateiGewaehlt} />
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={t.bild}
+          aria-label={t.datei}
           onClick={() => fileRef.current?.click()}
         >
-          <ImagePlus aria-hidden="true" />
+          <Paperclip aria-hidden="true" />
         </Button>
         <Button
           type="button"

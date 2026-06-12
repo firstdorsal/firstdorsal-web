@@ -5,6 +5,8 @@ import { expect, test, type Browser } from '@playwright/test'
 import { ADMIN_STATE, kundeAnmelden, neueKundenMail } from './helpers'
 
 const TESTBILD = path.join(import.meta.dirname, 'fixtures/testbild.png')
+const TESTVIDEO = path.join(import.meta.dirname, 'fixtures/testvideo.mp4')
+const TESTDATEI = path.join(import.meta.dirname, 'fixtures/testdatei.bin')
 // Die Sprachprobe (fixtures/sprachprobe.wav) sagt: "Hallo, ich
 // interessiere mich für eine neue Website für meine Firma." – das
 // tiny-Modell muss davon zumindest die Kernbegriffe treffen.
@@ -51,6 +53,38 @@ test('Bildnachricht kommt beim Operator an', async ({ page, browser }) => {
   const { context, page: admin } = await adminSeite(browser)
   await admin.getByRole('button', { name: new RegExp(email) }).click()
   await expect(admin.locator('img[alt="Gesendetes Bild"]')).toBeVisible()
+  await context.close()
+})
+
+test('Videonachricht kommt beim Operator an', async ({ page, browser }) => {
+  const email = neueKundenMail('video')
+  await kundeAnmelden(page, email)
+
+  await page.locator('input[type=file]').setInputFiles(TESTVIDEO)
+  await expect(page.locator('video')).toBeVisible()
+
+  const { context, page: admin } = await adminSeite(browser)
+  await admin.getByRole('button', { name: new RegExp(email) }).click()
+  await expect(admin.locator('video')).toBeVisible()
+  await context.close()
+})
+
+test('Beliebige Datei wird als Download verschickt', async ({ page, browser }) => {
+  const email = neueKundenMail('datei')
+  await kundeAnmelden(page, email)
+
+  await page.locator('input[type=file]').setInputFiles(TESTDATEI)
+  const link = page.getByRole('link', { name: /testdatei\.bin/ })
+  await expect(link).toBeVisible()
+  // Generische Dateien werden als Download (attachment) ausgeliefert, nie
+  // inline – das verhindert XSS aus hochgeladenen HTML/SVG-Dateien.
+  const res = await page.request.get((await link.getAttribute('href')) as string)
+  expect(res.headers()['content-disposition']).toContain('attachment')
+  expect(res.headers()['content-type']).toContain('application/octet-stream')
+
+  const { context, page: admin } = await adminSeite(browser)
+  await admin.getByRole('button', { name: new RegExp(email) }).click()
+  await expect(admin.getByRole('link', { name: /testdatei\.bin/ })).toBeVisible()
   await context.close()
 })
 

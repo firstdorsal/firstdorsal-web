@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
+import { Download, FileText } from 'lucide-react'
 
-import { attachmentUrl, formatTime, type ChatMessage } from '@/lib/chat'
+import { attachmentUrl, formatSize, formatTime, type ChatMessage } from '@/lib/chat'
 import type { OutboxEntry } from '@/lib/offline'
 import type { Lang } from '@/lib/i18n'
 
@@ -9,11 +10,15 @@ const texte = {
     transkriptLaeuft: 'Transkription läuft …',
     bildAlt: 'Gesendetes Bild',
     wartet: 'wartet auf Versand …',
+    datei: 'Datei',
+    herunterladen: 'Herunterladen',
   },
   en: {
     transkriptLaeuft: 'Transcribing …',
     bildAlt: 'Sent image',
     wartet: 'waiting to be sent …',
+    datei: 'File',
+    herunterladen: 'Download',
   },
 }
 
@@ -68,6 +73,25 @@ export function MessageBubble({
           )}
         </>
       )}
+      {message.kind === 'video' && a && (
+        <video controls preload="metadata" src={attachmentUrl(a.id)} className="max-h-64 rounded-sm" />
+      )}
+      {message.kind === 'file' && a && (
+        <a
+          href={attachmentUrl(a.id)}
+          download={a.filename ?? undefined}
+          className="flex items-center gap-2 rounded-sm border border-border bg-background/50 px-2.5 py-2 hover:bg-background"
+        >
+          <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block truncate text-sm">{a.filename ?? t.datei}</span>
+            <span className="block font-mono text-[10px] text-muted-foreground">
+              {formatSize(a.size, lang)}
+            </span>
+          </span>
+          <Download className="size-4 shrink-0 text-muted-foreground" aria-label={t.herunterladen} />
+        </a>
+      )}
       <p className="mt-1 font-mono text-[10px] text-muted-foreground">
         {senderLabel} · {formatTime(message.created_at, lang)}
       </p>
@@ -88,19 +112,31 @@ export function PendingBubble({ entry, lang }: { entry: OutboxEntry; lang: Lang 
       if (url) URL.revokeObjectURL(url)
     }
   }, [url])
-  const istBild = entry.blob?.type.startsWith('image/')
+  const typ = entry.blob?.type ?? ''
 
   return (
     <div className="ml-auto max-w-[85%] rounded-md border border-dashed border-border bg-accent/50 px-3 py-2 opacity-80">
       {entry.kind === 'text' && (
         <p className="text-sm/relaxed break-words whitespace-pre-wrap">{entry.text}</p>
       )}
-      {entry.kind === 'media' && url && istBild && (
+      {entry.kind === 'media' && url && typ.startsWith('image/') && (
         <img src={url} alt={t.bildAlt} className="max-h-56 rounded-sm" />
       )}
-      {entry.kind === 'media' && url && !istBild && (
+      {entry.kind === 'media' && url && typ.startsWith('audio/') && (
         <audio controls preload="metadata" src={url} className="w-full max-w-64" />
       )}
+      {entry.kind === 'media' && url && typ.startsWith('video/') && (
+        <video controls preload="metadata" src={url} className="max-h-64 rounded-sm" />
+      )}
+      {entry.kind === 'media' &&
+        !typ.startsWith('image/') &&
+        !typ.startsWith('audio/') &&
+        !typ.startsWith('video/') && (
+          <span className="flex items-center gap-2">
+            <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="truncate text-sm">{entry.filename ?? t.datei}</span>
+          </span>
+        )}
       <p className="mt-1 font-mono text-[10px] text-muted-foreground">{t.wartet}</p>
     </div>
   )
