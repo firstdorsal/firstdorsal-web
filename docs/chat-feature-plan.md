@@ -12,7 +12,8 @@ Magic-Link-geschützten **Admin-Panel**.
 Abgestimmte Eckpunkte (aus der Rückfrage):
 
 - Betreiber-Seite: **eigenes Admin-Panel** (in die Website integriert)
-- Backend-Stack: **Rust**
+- Backend-Stack: **Rust (axum)** – **liefert auch das statische Frontend aus**,
+  alles in **einem Container** (ersetzt den bisherigen `static-web-server`)
 - E-Mail-Versand: **vorhandener SMTP-Server** (Zugangsdaten via Secret)
 - Umfang dieser Session: **erst dieser Plan**, danach phasenweise Umsetzung
 
@@ -28,11 +29,14 @@ Fonts, Mail-Adresse gegen Scraper geschützt, DSGVO-bewusst (eigene
 
 Konsequenzen für das Feature:
 
-- Der Chat braucht zwingend einen **dynamischen Backend-Dienst** – die statische
-  Auslieferung bleibt davon unberührt.
-- Der neue Dienst fügt sich in dasselbe Muster ein: eigener Container,
-  read-only Root-FS + beschreibbares Volume, hinter Traefik, Secrets über
-  `provided-secrets.env` (bereits in `deployment/.gitignore`).
+- Der Chat braucht einen **dynamischen Backend-Dienst**. Entscheidung: **ein
+  Container** – der axum-Dienst liefert das gebaute Astro-`dist/` gleich mit
+  aus und **ersetzt den `static-web-server`** (samt `sws.toml`). Dessen
+  Verhalten (Security-Header, Kompression, Cache-Strategie, `/health`) wird
+  in axum/tower-http nachgebildet.
+- Der Dienst fügt sich in dasselbe Muster ein: read-only Root-FS +
+  beschreibbares Volume, hinter Traefik, Secrets über `provided-secrets.env`
+  (bereits in `deployment/.gitignore`).
 - Optik & Sprache: Das Widget folgt dem „Anatomische Tafel"-Theme
   (`global.css`-Tokens, `font-serif`/`annotation`/`label-caps`) und dem
   DE/EN-Muster (`lang`-Prop + lokales Wörterbuch wie in `Kontakt.tsx`).
@@ -42,28 +46,29 @@ Konsequenzen für das Feature:
 ## 2. Architektur im Überblick
 
 ```
-                          ┌───────────────────────── turing (Docker, rp-Netz) ─────────────────────────┐
-                          │                                                                            │
-  Browser (Kunde)         │   Traefik (TLS)                                                            │
-  ┌───────────────┐       │   ├─ Host firstdorsal.eu, Pfad /chat/api/**, /chat/ws  ─► firstdorsal-chat │
-  │ Astro-Seite   │       │   │                                              (Rust/axum)               │
-  │  + Chat-Widget│──────►│   └─ sonst Host firstdorsal.eu                  ─► firstdorsal-web (SWS)    │
-  │   (React-Insel)│      │                                                       (statisch, scratch)   │
-  └───────────────┘       │                                                                            │
-                          │   firstdorsal-chat ──(internes Netz)──► firstdorsal-whisper (whisper.cpp)  │
-  Browser (Paul/Admin)    │        │                                                                    │
-  ┌───────────────┐       │        ├─ SQLite + Uploads  ──►  Volume /data (beschreibbar)               │
-  │ /chat/admin   │──────►│        └─ SMTP  ──────────────►  vorhandener Mailserver (extern)           │
-  └───────────────┘       │                                                                            │
-                          └────────────────────────────────────────────────────────────────────────────┘
+                          ┌──────────────────────── turing (Docker, rp-Netz) ────────────────────────┐
+                          │                                                                          │
+  Browser (Kunde)         │   Traefik (TLS)                                                          │
+  ┌───────────────┐       │   └─ Host firstdorsal.eu ──► firstdorsal-web (Rust/axum, EIN Container)  │
+  │ Astro-Seite   │       │            ├─ statische Dateien (Astro-dist/, ins Image gebacken)        │
+  │  + Chat-Widget│──────►│            ├─ /chat/api/** (REST) und /chat/ws (WebSocket)               │
+  │   (React-Insel)│      │            ├─ SQLite + Uploads ──► Volume /data (beschreibbar)           │
+  └───────────────┘       │            ├─ SMTP ──────────────► vorhandener Mailserver (extern)       │
+                          │            └─(internes Netz)────► firstdorsal-whisper (whisper.cpp)      │
+  Browser (Paul/Admin)    │                                    (nicht über Traefik exponiert)         │
+  ┌───────────────┐       │                                                                          │
+  │ /chat/admin   │──────►│                                                                          │
+  └───────────────┘       │                                                                          │
+                          └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Same-Origin per Pfad-Routing** statt Subdomain: Traefik bekommt einen Router
-mit höherer Priorität, der `firstdorsal.eu/chat/api/**` und `/chat/ws` an den
-Rust-Dienst leitet; alles andere bleibt beim statischen Server. Vorteil: keine
-CORS-Sonderfälle, Session-Cookie sauber auf der Apex-Domain, ein TLS-Zertifikat.
+**Ein Container für alles** (außer Whisper): axum liefert das statische
+Astro-`dist/` aus **und** bedient `/chat/api/**` + `/chat/ws`. Traefik-Routing
+bleibt so simpel wie heute (ein Router, ein Zertifikat), Same-Origin ohne
+CORS-Sonderfälle, Session-Cookie sauber auf der Apex-Domain. Der
+`static-web-server` und `sws.toml` entfallen.
 
-Begründung der Wahl gegenüber Alternativen:
+Begründung der übrigen Wahl gegenüber Alternativen:
 
 - **SQLite** (statt Postgres): Single-Node, geringe Last (Akquise-Chat), eine
   Datei auf dem Volume, WAL-Modus, kein zweiter DB-Container. Über `sqlx` mit
@@ -77,10 +82,18 @@ Begründung der Wahl gegenüber Alternativen:
 
 ## 3. Komponenten
 
-### 3.1 Rust-Backend `firstdorsal-chat`
+### 3.1 Rust-Dienst `firstdorsal-web` (Backend **und** Frontend-Auslieferung)
 
 - **Framework:** `axum` (auf `tokio`/`tower`) – integrierte WebSockets,
   Middleware, Multipart-Uploads.
+- **Statische Auslieferung** des Astro-`dist/` über `tower-http::ServeDir`
+  (Fallback-Route hinter den `/chat`-Routen). Die heutige SWS-Konfiguration
+  wird nachgebildet:
+  - Cache-Strategie: HTML `Cache-Control: no-cache` (+ ETag), `/_astro/**`
+    `public, max-age=31536000, immutable`, Icons 1 Tag
+  - Kompression: Brotli/Gzip via `CompressionLayer` (oder vorab komprimierte
+    Dateien aus dem Build via `ServeDir::precompressed_*`)
+  - Security-Header als Middleware, `/health` für Deployment-Checks
 - **DB:** `sqlx` + **SQLite** (WAL), Migrationen im Repo (`migrations/`).
 - **Auth:** Magic-Link. E-Mail → Einmal-Token (nur Hash gespeichert, kurze
   Gültigkeit) → Versand per SMTP → Klick setzt **HttpOnly/Secure/SameSite**-
@@ -163,36 +176,37 @@ Begründung der Wahl gegenüber Alternativen:
 
 ---
 
-## 6. Deployment-Erweiterung
+## 6. Deployment-Umbau
 
-- `deployment/templates/docker-compose.yaml` bekommt zwei neue Services:
-  - `firstdorsal-chat` (Rust): am `rp`-Netz für Traefik **und** an einem
-    internen Netz zum Whisper-Dienst; read-only Root-FS + Volume `/data`
-    (SQLite + Uploads); `no-new-privileges`.
-  - `firstdorsal-whisper`: nur am internen Netz, Modell auf eigenem Volume,
-    **nicht** über Traefik exponiert.
-- **Traefik-Labels:** Router mit höherer Priorität für
-  `Host(firstdorsal.eu) && (PathPrefix(/chat/api) || Path(/chat/ws))` →
-  `firstdorsal-chat`; bestehender statischer Router bleibt Fallback.
+- `deployment/templates/docker-compose.yaml`:
+  - `firstdorsal-web` wird zum axum-Container (gleicher Name, gleiche
+    Traefik-Labels wie heute – Router/TLS/www-Redirect bleiben unverändert);
+    zusätzlich internes Netz zum Whisper-Dienst, read-only Root-FS +
+    Volume `/data` (SQLite + Uploads), `no-new-privileges`.
+  - Neu: `firstdorsal-whisper` – nur am internen Netz, Modell auf eigenem
+    Volume, **nicht** über Traefik exponiert.
 - **Secrets:** SMTP-Zugang, Session-/Token-Signaturschlüssel, Operator-E-Mail
   über `provided-secrets.env` (gitignored) bzw. `values.yaml`.
-- **Build/CI:** Eigene `Dockerfile` im `chat-backend/` (Multi-Stage Rust,
-  `cargo-chef` für Cache, `cargo test` im Build wie heute `pnpm test`).
-  `.github/workflows/` um einen Build-/Push-Schritt für das Chat-Image
-  erweitern; `deploy.sh` zieht beide Images.
+- **Build/CI:** Die bestehende `Dockerfile` wird Multi-Stage erweitert:
+  Stage 1 Node/pnpm (Tests + Astro-Build wie heute), Stage 2 Rust
+  (`cargo-chef` für Cache, `cargo test` im Build), Laufzeit-Stage: schlankes
+  Basis-Image (distroless/`scratch` bei musl-Build) mit axum-Binary +
+  `dist/`. `build.sh`, Pipeline und `deploy.sh` bleiben im Ablauf identisch –
+  ein Image, ein Push, ein `mpm compose up`. `sws.toml` entfällt.
 
 ---
 
 ## 7. Vorgeschlagene Repo-Struktur
 
 ```
-chat-backend/              Rust-Service (Cargo-Projekt)
+server/                    Rust-Service (Cargo-Projekt)
   Cargo.toml
-  src/                     axum-App, Auth, WS, Uploads, Whisper-Client
+  src/                     axum-App: statische Auslieferung, Auth, WS,
+                           Uploads, Whisper-Client
   migrations/              SQLite-Migrationen (sqlx)
-  Dockerfile
 src/components/chat/        Kunden-Widget + Admin-Panel (React-Inseln)
 src/pages/chat/admin.astro  Admin-Seite (Insel-Host)
+Dockerfile                 Multi-Stage: Node (Astro) → Rust → Laufzeit-Image
 deployment/                erweitertes compose + values + Secret-Vorlage
 docs/chat-feature-plan.md   dieses Dokument
 ```
@@ -202,10 +216,12 @@ docs/chat-feature-plan.md   dieses Dokument
 ## 8. Phasenplan
 
 - **Phase 0 – Plan** (dieses Dokument). ✅
-- **Phase 1 – Text-Chat & Auth (MVP):** axum-Skelett + SQLite + Health;
-  Magic-Link (Kunde + Operator) + Sessions + SMTP (`lettre`); WebSocket-Text-Chat;
-  Widget (Launcher → E-Mail → Chat) + Basis-Admin-Panel; Traefik-Pfad-Routing,
-  Volume, Secrets, CI-Build. **Lauffähiges Ende-zu-Ende-Fundament.**
+- **Phase 1 – axum-Fundament & Text-Chat (MVP):** axum-Dienst, der das
+  Astro-`dist/` ausliefert (Header/Caching/Kompression wie SWS, `/health`) und
+  den SWS im Image ersetzt; SQLite; Magic-Link (Kunde + Operator) + Sessions +
+  SMTP (`lettre`); WebSocket-Text-Chat; Widget (Launcher → E-Mail → Chat) +
+  Basis-Admin-Panel; Multi-Stage-Dockerfile, Volume, Secrets, CI-Build.
+  **Lauffähiges Ende-zu-Ende-Fundament.**
 - **Phase 2 – Bilder:** Upload, Limits/Thumbnails, Anzeige in Widget & Admin.
 - **Phase 3 – Sprachnachrichten:** `MediaRecorder`-Aufnahme, Upload, Audio-Player.
 - **Phase 4 – Transkription:** Whisper-Container, asynchroner Job, Transkript
@@ -218,15 +234,13 @@ docs/chat-feature-plan.md   dieses Dokument
 
 ## 9. Offene Punkte zur Bestätigung
 
-1. **Routing:** Same-Origin-Pfad `/chat/...` (empfohlen) oder Subdomain
-   `chat.firstdorsal.eu`?
-2. **Whisper-Modell:** `large-v3-turbo` (Qualität) vs. `medium`
+1. **Whisper-Modell:** `large-v3-turbo` (Qualität) vs. `medium`
    (ressourcenschonend) – und ist auf turing eine GPU verfügbar?
-3. **Operator-Benachrichtigung:** Wie soll Paul über neue Nachrichten erfahren,
+2. **Operator-Benachrichtigung:** Wie soll Paul über neue Nachrichten erfahren,
    wenn das Admin-Panel nicht offen ist (E-Mail / Web-Push / beides)?
-4. **Aufbewahrungsfrist:** Wie lange sollen Konversationen + Medien gespeichert
+3. **Aufbewahrungsfrist:** Wie lange sollen Konversationen + Medien gespeichert
    bleiben (z. B. 90/180 Tage), bevor automatisch gelöscht wird?
-5. **SMTP-Details:** Host/Port/TLS-Modus, Absenderadresse, vorhandenes Konto?
+4. **SMTP-Details:** Host/Port/TLS-Modus, Absenderadresse, vorhandenes Konto?
 
 Nach Freigabe dieses Plans (und Klärung der offenen Punkte) starte ich mit
 **Phase 1**.
