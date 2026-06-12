@@ -8,6 +8,7 @@ mod config;
 mod db;
 mod mail;
 mod statics;
+mod turn;
 mod whisper;
 mod ws;
 

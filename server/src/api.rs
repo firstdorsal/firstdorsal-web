@@ -26,6 +26,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/chat/api/auth/request", post(auth_request))
         .route("/chat/api/auth/logout", post(logout))
         .route("/chat/api/me", get(me))
+        .route("/chat/api/ice", get(ice))
         .route("/chat/api/messages", get(customer_messages).post(customer_send))
         .route("/chat/api/messages/media", post(customer_send_media))
         .route("/chat/api/attachments/{id}", get(get_attachment))
@@ -288,6 +289,15 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> ApiResult<J
         .await
         .ok_or(UNAUTHORIZED)?;
     Ok(Json(json!({ "role": session.role, "email": session.email })))
+}
+
+/// ICE-Server (STUN/TURN) für die WebRTC-Anrufe – nur für Angemeldete,
+/// da die TURN-Zugangsdaten zeitlich begrenzt mitgeliefert werden.
+async fn ice(State(state): State<SharedState>, headers: HeaderMap) -> ApiResult<Json<Value>> {
+    auth::session_from_headers(&state.db, &headers)
+        .await
+        .ok_or(UNAUTHORIZED)?;
+    Ok(Json(crate::turn::ice_servers(&state.cfg)))
 }
 
 // ---------- Nachrichten ----------

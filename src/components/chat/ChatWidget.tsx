@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { MessageCircle, Phone, Video, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Composer } from '@/components/chat/Composer'
 import { MessageBubble, PendingBubble } from '@/components/chat/MessageBubble'
+import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
 import {
   applyTranscript,
   fetchMe,
@@ -13,6 +14,7 @@ import {
   requestMagicLink,
   sendMedia,
   sendMessage,
+  sendSignal,
   type ChatMessage,
 } from '@/lib/chat'
 import {
@@ -43,6 +45,8 @@ const texte = {
     abmelden: 'Abmelden',
     operatorHinweis: 'Sie sind als Operator angemeldet – zur Verwaltung geht es hier:',
     adminLink: 'Chat-Verwaltung öffnen',
+    anrufAudio: 'Sprachanruf starten',
+    anrufVideo: 'Videoanruf starten',
     offline: 'Offline – Nachrichten werden gesendet, sobald Sie wieder online sind.',
     fehlerEmail: 'Bitte eine gültige E-Mail-Adresse angeben.',
     fehlerRate: 'Zu viele Versuche – bitte warten Sie einen Moment.',
@@ -67,6 +71,8 @@ const texte = {
     abmelden: 'Sign out',
     operatorHinweis: 'You are signed in as the operator – manage chats here:',
     adminLink: 'Open chat admin',
+    anrufAudio: 'Start voice call',
+    anrufVideo: 'Start video call',
     offline: 'Offline – messages will be sent as soon as you are back online.',
     fehlerEmail: 'Please enter a valid email address.',
     fehlerRate: 'Too many attempts – please wait a moment.',
@@ -96,6 +102,15 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
   const [istOffline, setIstOffline] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const flushingRef = useRef(false)
+  const wsRef = useRef<WebSocket | null>(null)
+  const callRef = useRef<CallHandle>(null)
+
+  // Signalisierung über den jeweils aktuellen Socket; die eigene
+  // Konversation erzwingt der Server (conversation_id darf null sein).
+  const signal = useCallback(
+    (payload: Record<string, unknown>) => sendSignal(wsRef.current, null, payload),
+    [],
+  )
 
   const addMessage = useCallback((msg: ChatMessage) => {
     setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
@@ -180,7 +195,9 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
       ws = openChatSocket({
         onMessage: addMessage,
         onTranscript: (ev) => setMessages((prev) => applyTranscript(prev, ev)),
+        onSignal: (msg) => callRef.current?.onSignal(msg),
       })
+      wsRef.current = ws
       ws.addEventListener('open', () => void flushOutbox())
       ws.addEventListener('close', () => {
         if (aktiv) timer = window.setTimeout(verbinden, 3000)
@@ -193,6 +210,7 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
       ws?.close()
+      wsRef.current = null
     }
   }, [open, phase, addMessage, flushOutbox])
 
@@ -269,9 +287,27 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
         <p className="annotation text-base">{t.titel}</p>
         <div className="flex items-center gap-1">
           {phase === 'chat' && (
-            <Button variant="ghost" size="sm" onClick={abmelden}>
-              {t.abmelden}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t.anrufAudio}
+                onClick={() => callRef.current?.startCall(false)}
+              >
+                <Phone aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t.anrufVideo}
+                onClick={() => callRef.current?.startCall(true)}
+              >
+                <Video aria-hidden="true" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={abmelden}>
+                {t.abmelden}
+              </Button>
+            </>
           )}
           <Button
             variant="ghost"
@@ -364,6 +400,11 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
           {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
           <Composer lang={lang} onText={textSenden} onMedia={medienSenden} />
         </>
+      )}
+
+      {/* Anruf-Overlay: liegt über dem Chat, sobald ein Anruf läuft. */}
+      {phase === 'chat' && (
+        <CallPanel ref={callRef} lang={lang} polite signal={signal} />
       )}
     </div>
   )

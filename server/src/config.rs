@@ -39,6 +39,23 @@ pub struct Config {
     /// Test-/Dev-Modus: Mails als Dateien in dieses Verzeichnis schreiben
     /// statt sie zu versenden (genutzt von den Playwright-E2E-Tests).
     pub mail_file_dir: Option<PathBuf>,
+    /// WebRTC: STUN-URLs (z. B. "stun:turn.example.eu:3478"), kommagetrennt.
+    pub stun_urls: Vec<String>,
+    /// WebRTC: TURN-URLs (z. B. "turn:turn.example.eu:3478?transport=udp").
+    pub turn_urls: Vec<String>,
+    /// Shared Secret für coturns REST-Auth (`use-auth-secret`). None = nur
+    /// STUN/Host-Kandidaten (kein Relay).
+    pub turn_secret: Option<String>,
+    /// Gültigkeitsdauer der TURN-Zugangsdaten in Sekunden.
+    pub turn_ttl: i64,
+}
+
+fn env_list(key: &str) -> Vec<String> {
+    env_or(key, "")
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 fn env_or(key: &str, default: &str) -> String {
@@ -87,6 +104,10 @@ impl Config {
                 .ok()
                 .filter(|v| !v.is_empty())
                 .map(PathBuf::from),
+            stun_urls: env_list("STUN_URLS"),
+            turn_urls: env_list("TURN_URLS"),
+            turn_secret: std::env::var("TURN_SECRET").ok().filter(|v| !v.is_empty()),
+            turn_ttl: env_or("TURN_TTL", "3600").parse().unwrap_or(3600),
         })
     }
 

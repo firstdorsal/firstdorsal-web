@@ -152,13 +152,23 @@ export async function deleteConversation(id: number): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
+/** Eine Signalisierungsnachricht eines Anrufs (von der Gegenstelle). */
+export interface SignalMessage {
+  conversation_id: number
+  from: ChatRole
+  kind: string
+  [key: string]: unknown
+}
+
 export interface SocketHandlers {
   onMessage: (msg: ChatMessage) => void
   onTranscript?: (ev: TranscriptEvent) => void
+  /** WebRTC-Signalisierung der Anruf-Funktion. */
+  onSignal?: (msg: SignalMessage) => void
 }
 
-/** Push-Kanal: Der Server schickt neue Nachrichten und Transkripte,
- *  gesendet wird per REST. */
+/** Push-Kanal: Der Server schickt neue Nachrichten, Transkripte und die
+ *  Anruf-Signalisierung; Chat-Nachrichten werden per REST gesendet. */
 export function openChatSocket(handlers: SocketHandlers): WebSocket {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   const ws = new WebSocket(`${proto}://${location.host}/chat/ws`)
@@ -166,12 +176,24 @@ export function openChatSocket(handlers: SocketHandlers): WebSocket {
     try {
       const data = JSON.parse(ev.data as string)
       if (data.type === 'message') handlers.onMessage(data.message as ChatMessage)
-      if (data.type === 'transcript') handlers.onTranscript?.(data as TranscriptEvent)
+      else if (data.type === 'transcript') handlers.onTranscript?.(data as TranscriptEvent)
+      else if (data.type === 'signal') handlers.onSignal?.(data as SignalMessage)
     } catch {
       // Kaputte Frames ignorieren – der Verlauf kommt notfalls per REST.
     }
   })
   return ws
+}
+
+/** Signalisierung an die Gegenstelle senden (Operator gibt die
+ *  Konversation an; beim Kunden erzwingt der Server die eigene). */
+export function sendSignal(
+  ws: WebSocket | null,
+  conversationId: number | null,
+  payload: Record<string, unknown>,
+): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return
+  ws.send(JSON.stringify({ type: 'signal', conversation_id: conversationId, ...payload }))
 }
 
 /** Transkript-Event in eine Nachrichtenliste einarbeiten. */

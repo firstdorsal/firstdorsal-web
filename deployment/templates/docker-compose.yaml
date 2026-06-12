@@ -11,8 +11,9 @@ services:
             chat-internal:
         security_opt:
             - no-new-privileges:true
-        # SMTP-Zugang & Operator-Adressen für den Kunden-Chat – die Datei
-        # liegt nur auf dem Server (siehe provided-secrets.env.example).
+        # SMTP-Zugang, Operator-Adressen und (optional) TURN-Secret für den
+        # Kunden-Chat – die Datei liegt nur auf dem Server (siehe
+        # provided-secrets.env.example).
         env_file:
             - ../provided-secrets.env
         environment:
@@ -23,24 +24,6 @@ services:
             - chat-data:/data
         depends_on:
             - firstdorsal-whisper
-
-    # Self-hosted Transkription der Sprachnachrichten (CPU): faster-whisper
-    # hinter einer kleinen HTTP-API, nur im internen Netz erreichbar –
-    # Audiodaten verlassen den Server nicht.
-    firstdorsal-whisper:
-        container_name: firstdorsal-whisper
-        image: "docker.io/onerahmet/openai-whisper-asr-webservice:v1.9.1"
-        restart: always
-        networks:
-            chat-internal:
-        security_opt:
-            - no-new-privileges:true
-        environment:
-            ASR_ENGINE: faster_whisper
-            ASR_MODEL: "{{ .whisperModel }}"
-        volumes:
-            # Heruntergeladene Modelle überleben Container-Neustarts.
-            - whisper-models:/root/.cache
         labels:
             traefik.enable: "true"
             traefik.docker.network: rp
@@ -55,6 +38,71 @@ services:
             traefik.http.middlewares.firstdorsal-web-www.redirectregex.replacement: "https://{{ .hostname }}/$${1}"
             traefik.http.middlewares.firstdorsal-web-www.redirectregex.permanent: "true"
             traefik.http.services.firstdorsal-web.loadbalancer.server.port: "80"
+
+    # Self-hosted Transkription der Sprachnachrichten (CPU): faster-whisper
+    # hinter einer kleinen HTTP-API, nur im internen Netz erreichbar –
+    # Audiodaten verlassen den Server nicht (nicht über Traefik exponiert).
+    firstdorsal-whisper:
+        container_name: firstdorsal-whisper
+        image: "docker.io/onerahmet/openai-whisper-asr-webservice:v1.9.1"
+        restart: always
+        networks:
+            chat-internal:
+        security_opt:
+            - no-new-privileges:true
+        environment:
+            ASR_ENGINE: faster_whisper
+            ASR_MODEL: "{{ .whisperModel }}"
+        volumes:
+            # Heruntergeladene Modelle überleben Container-Neustarts.
+            - whisper-models:/root/.cache
+
+    # TURN/STUN-Relay (coturn) für die WebRTC-Anrufe. Optional: Ohne
+    # gesetztes TURN_SECRET in provided-secrets.env klappen Anrufe direkt
+    # bzw. per STUN (~80-90 % der Netze); coturn deckt den Rest (strenge
+    # NATs/Firewalls) ab.
+    #
+    # Netz: host. Ports müssen ohnehin geöffnet und im Router
+    # weitergeleitet werden – man könnte den Control-Port 3478 daher auch
+    # über einen Traefik-UDP-/TCP-Entrypoint proxien (siehe unten). Der
+    # Haken bleibt der Relay-Portbereich (min-port..max-port): den vergibt
+    # coturn pro Verbindung und die Gegenstelle sendet direkt dorthin – der
+    # muss also so oder so durchgereicht werden. Mit Host-Netz ist das am
+    # einfachsten; offen sein müssen 3478/udp+tcp und 49160-49200/udp.
+    #
+    # Alternative „alles über Traefik": coturn an chat-internal hängen
+    # (statt network_mode: host), in der Traefik-Statik einen Entrypoint
+    # `turn` (z. B. :3478/udp und /tcp) definieren und hier ergänzen:
+    #     labels:
+    #       traefik.udp.routers.coturn.entrypoints: turn
+    #       traefik.udp.routers.coturn.service: coturn
+    #       traefik.udp.services.coturn.loadbalancer.server.port: "3478"
+    # Den Relay-Bereich (49160-49200/udp) zusätzlich per `ports:` auf den
+    # Host mappen und `--external-ip` setzen. Für maximale Firewall-
+    # Resistenz TURN zusätzlich per TLS (turns) auf 443/tcp über einen
+    # Traefik-TCP-Entrypoint anbieten.
+    firstdorsal-coturn:
+        container_name: firstdorsal-coturn
+        image: "docker.io/coturn/coturn:4.7-alpine"
+        restart: always
+        # Relay-Portbereich + öffentliche Adresse erfordern Host-Netz.
+        network_mode: host
+        security_opt:
+            - no-new-privileges:true
+        env_file:
+            - ../provided-secrets.env
+        # Der Container-Shell expandiert $TURN_SECRET aus seiner eigenen
+        # Umgebung (env_file) – kein Secret im Repo. TURN_EXTERNAL_IP nur
+        # nötig, wenn der Server hinter NAT steht (z. B. Cloud).
+        entrypoint: ["/bin/sh", "-c"]
+        command:
+            - >
+                exec turnserver -n --use-auth-secret
+                --static-auth-secret="$TURN_SECRET"
+                --realm="{{ .hostname }}"
+                --listening-port=3478 --min-port=49160 --max-port=49200
+                --no-tls --no-dtls --no-cli --no-software-attribute
+                ${TURN_EXTERNAL_IP:+--external-ip=$TURN_EXTERNAL_IP}
 
 networks:
     rp:

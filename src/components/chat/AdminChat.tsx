@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Phone, Trash2, Video } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Composer } from '@/components/chat/Composer'
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { CallPanel, type CallHandle } from '@/components/chat/CallPanel'
 import {
   applyTranscript,
   deleteConversation,
@@ -16,6 +17,7 @@ import {
   requestMagicLink,
   sendOperatorMedia,
   sendOperatorMessage,
+  sendSignal,
   type ChatConversation,
   type ChatMessage,
 } from '@/lib/chat'
@@ -38,6 +40,14 @@ export function AdminChat() {
   const listRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<number | null>(null)
   selectedRef.current = selected
+  const wsRef = useRef<WebSocket | null>(null)
+  const callRef = useRef<CallHandle>(null)
+
+  // Signalisierung an die gerade geöffnete Konversation.
+  const signal = useCallback(
+    (payload: Record<string, unknown>) => sendSignal(wsRef.current, selectedRef.current, payload),
+    [],
+  )
 
   const refreshConversations = useCallback(() => {
     fetchConversations().then(setConversations).catch(() => {})
@@ -74,7 +84,12 @@ export function AdminChat() {
             setMessages((prev) => applyTranscript(prev, ev))
           }
         },
+        // Signal nur annehmen, wenn es zur offenen Konversation gehört.
+        onSignal: (msg) => {
+          if (msg.conversation_id === selectedRef.current) callRef.current?.onSignal(msg)
+        },
       })
+      wsRef.current = ws
       ws.addEventListener('close', () => {
         if (aktiv) timer = window.setTimeout(verbinden, 3000)
       })
@@ -83,6 +98,7 @@ export function AdminChat() {
     return () => {
       aktiv = false
       if (timer) clearTimeout(timer)
+      wsRef.current = null
     }
   }, [phase, refreshConversations])
 
@@ -239,19 +255,37 @@ export function AdminChat() {
           </ul>
         </aside>
 
-        <section className="flex min-w-0 flex-1 flex-col">
+        <section className="relative flex min-w-0 flex-1 flex-col">
           {aktive ? (
             <>
               <div className="flex items-center justify-between border-b border-border px-4 py-2">
                 <p className="truncate text-sm font-medium">{aktive.email}</p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Konversation löschen"
-                  onClick={() => loeschen(aktive.id)}
-                >
-                  <Trash2 aria-hidden="true" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Sprachanruf starten"
+                    onClick={() => callRef.current?.startCall(false)}
+                  >
+                    <Phone aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Videoanruf starten"
+                    onClick={() => callRef.current?.startCall(true)}
+                  >
+                    <Video aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Konversation löschen"
+                    onClick={() => loeschen(aktive.id)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </Button>
+                </div>
               </div>
               <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
                 {messages.map((m) => (
@@ -266,6 +300,8 @@ export function AdminChat() {
               </div>
               {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
               <Composer lang="de" onText={antworten} onMedia={medienAntworten} />
+              {/* Anruf-Overlay über dem geöffneten Gespräch. */}
+              <CallPanel ref={callRef} lang="de" polite={false} signal={signal} />
             </>
           ) : (
             <p className="annotation m-auto text-sm text-muted-foreground">

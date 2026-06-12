@@ -234,9 +234,20 @@ docs/chat-feature-plan.md   dieses Dokument
   (Rust-Server + echtes Whisper-Image mit tiny-Modell): Magic-Link-Login,
   Text live in beide Richtungen, Bild, Sprachnachricht aus echter Sprachprobe
   (Fake-Mikrofon) mit echter Transkription, Offline-Outbox-Roundtrip. ✅
-- **Phase 5 – Politur (offen):** Operator-Benachrichtigung per E-Mail bei
-  neuer Nachricht, Tipp-/Lese-Indikatoren, `datenschutz.astro`-Update
-  (Pflicht vor Launch!), 512px-Maskable-Icon fürs Manifest, CSP.
+- **Phase 4d – Beliebige Dateien:** Videos und generische Dateien (PDF,
+  ZIP, Dokumente …) als Anhang; sichere Auslieferung (nur Medien/PDF
+  inline, sonst Download), 100-MB-Grenze. E2E für Video und Datei. ✅
+- **Phase 4e – Anrufe (WebRTC):** 1:1-Sprach-/Videoanrufe inkl.
+  Screensharing; Signalisierung über den bestehenden WebSocket (Relais
+  zwischen den beiden Teilnehmern), ICE-Endpoint mit coturn-REST-
+  Zugangsdaten, coturn im Deployment (Host-Netz; Traefik-Proxy als
+  dokumentierte Alternative). E2E: echter Verbindungsaufbau zwischen
+  zwei Browser-Kontexten. ✅
+- **Phase 5 – Politur (offen):** Endloses Virtual-Scrolling im Verlauf
+  (große Konversationen mit Medien) + Performance-Tests, Operator-
+  Benachrichtigung per E-Mail bei neuer Nachricht, Anruf-Klingeln auch
+  bei geschlossenem Widget, Tipp-/Lese-Indikatoren, `datenschutz.astro`-
+  Update (Pflicht vor Launch!), 512px-Maskable-Icon, CSP.
 
 ---
 
