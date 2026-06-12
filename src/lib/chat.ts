@@ -4,6 +4,15 @@
 
 export type ChatRole = 'customer' | 'operator'
 
+export interface ChatAttachment {
+  id: number
+  kind: 'image' | 'voice'
+  mime: string
+  size: number
+  transcript: string | null
+  transcript_status: 'pending' | 'done' | 'failed' | null
+}
+
 export interface ChatMessage {
   id: number
   conversation_id: number
@@ -11,6 +20,16 @@ export interface ChatMessage {
   kind: 'text' | 'image' | 'voice'
   body_text: string | null
   created_at: number
+  attachment: ChatAttachment | null
+}
+
+/** Transkript einer Sprachnachricht wird asynchron nachgereicht. */
+export interface TranscriptEvent {
+  conversation_id: number
+  message_id: number
+  attachment_id: number
+  transcript: string | null
+  transcript_status: 'done' | 'failed'
 }
 
 export interface ChatConversation {
@@ -65,6 +84,22 @@ export async function sendMessage(text: string): Promise<ChatMessage> {
   )
 }
 
+function mediaForm(file: Blob, filename: string): FormData {
+  const form = new FormData()
+  form.append('file', file, filename)
+  return form
+}
+
+export async function sendMedia(file: Blob, filename: string): Promise<ChatMessage> {
+  return asJson(
+    await fetch('/chat/api/messages/media', { method: 'POST', body: mediaForm(file, filename) }),
+  )
+}
+
+export function attachmentUrl(id: number): string {
+  return `/chat/api/attachments/${id}`
+}
+
 export async function fetchConversations(): Promise<ChatConversation[]> {
   return asJson(await fetch('/chat/api/admin/conversations'))
 }
@@ -83,24 +118,60 @@ export async function sendOperatorMessage(id: number, text: string): Promise<Cha
   )
 }
 
+export async function sendOperatorMedia(
+  id: number,
+  file: Blob,
+  filename: string,
+): Promise<ChatMessage> {
+  return asJson(
+    await fetch(`/chat/api/admin/conversations/${id}/media`, {
+      method: 'POST',
+      body: mediaForm(file, filename),
+    }),
+  )
+}
+
 export async function deleteConversation(id: number): Promise<void> {
   const res = await fetch(`/chat/api/admin/conversations/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
-/** Push-Kanal: Der Server schickt neue Nachrichten, gesendet wird per REST. */
-export function openChatSocket(onMessage: (msg: ChatMessage) => void): WebSocket {
+export interface SocketHandlers {
+  onMessage: (msg: ChatMessage) => void
+  onTranscript?: (ev: TranscriptEvent) => void
+}
+
+/** Push-Kanal: Der Server schickt neue Nachrichten und Transkripte,
+ *  gesendet wird per REST. */
+export function openChatSocket(handlers: SocketHandlers): WebSocket {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   const ws = new WebSocket(`${proto}://${location.host}/chat/ws`)
   ws.addEventListener('message', (ev) => {
     try {
       const data = JSON.parse(ev.data as string)
-      if (data.type === 'message') onMessage(data.message as ChatMessage)
+      if (data.type === 'message') handlers.onMessage(data.message as ChatMessage)
+      if (data.type === 'transcript') handlers.onTranscript?.(data as TranscriptEvent)
     } catch {
       // Kaputte Frames ignorieren – der Verlauf kommt notfalls per REST.
     }
   })
   return ws
+}
+
+/** Transkript-Event in eine Nachrichtenliste einarbeiten. */
+export function applyTranscript(msgs: ChatMessage[], ev: TranscriptEvent): ChatMessage[] {
+  return msgs.map((m) =>
+    m.id === ev.message_id && m.attachment
+      ? {
+          ...m,
+          attachment: {
+            ...m.attachment,
+            transcript: ev.transcript,
+            transcript_status: ev.transcript_status,
+          },
+        }
+      : m,
+  )
 }
 
 /** Unix-Sekunden als kurze, lokale Zeitangabe. */

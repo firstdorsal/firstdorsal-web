@@ -6,18 +6,25 @@ use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use crate::config::Config;
 
 // Versand der Magic-Link-Mails über den vorhandenen SMTP-Account (TLS).
-// Ohne SMTP_HOST (lokale Entwicklung) wird der Link nur geloggt – so
-// lässt sich der komplette Ablauf ohne Mailserver testen.
+// Ohne SMTP_HOST (lokale Entwicklung) wird der Link nur geloggt; mit
+// MAIL_FILE_DIR landen die Mails als Dateien auf der Platte – davon
+// leben die Playwright-E2E-Tests.
 pub enum Mailer {
     Smtp {
         transport: AsyncSmtpTransport<Tokio1Executor>,
         from: String,
     },
+    File(std::path::PathBuf),
     Log,
 }
 
 impl Mailer {
     pub fn new(cfg: &Config) -> anyhow::Result<Self> {
+        if let Some(dir) = &cfg.mail_file_dir {
+            std::fs::create_dir_all(dir).context("MAIL_FILE_DIR anlegen")?;
+            tracing::warn!("MAIL_FILE_DIR gesetzt – Mails werden nur als Dateien abgelegt");
+            return Ok(Self::File(dir.clone()));
+        }
         let Some(smtp) = &cfg.smtp else {
             tracing::warn!("SMTP_HOST nicht gesetzt – Magic-Links landen nur im Log");
             return Ok(Self::Log);
@@ -62,6 +69,13 @@ impl Mailer {
         match self {
             Self::Log => {
                 tracing::info!("Magic-Link für {to}: {link}");
+                Ok(())
+            }
+            Self::File(dir) => {
+                let name = format!("{}-{}.txt", crate::db::now(), to.replace(['@', '/'], "_"));
+                tokio::fs::write(dir.join(name), format!("To: {to}\nSubject: {subject}\n\n{body}"))
+                    .await
+                    .context("Mail-Datei schreiben")?;
                 Ok(())
             }
             Self::Smtp { transport, from } => {

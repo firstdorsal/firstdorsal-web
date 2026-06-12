@@ -24,6 +24,8 @@ async fn headers_mw(req: Request, next: Next) -> Response {
     let mut res = next.run(req).await;
     let h = res.headers_mut();
 
+    // Handler-eigene Cache-Strategien (z. B. Attachments) respektieren.
+    let cache_gesetzt = h.contains_key(header::CACHE_CONTROL);
     let cache: &'static str = if path.starts_with("/chat/api")
         || path.starts_with("/chat/ws")
         || path.starts_with("/chat/login")
@@ -37,7 +39,9 @@ async fn headers_mw(req: Request, next: Next) -> Response {
     } else {
         "no-cache"
     };
-    h.insert(header::CACHE_CONTROL, HeaderValue::from_static(cache));
+    if !cache_gesetzt {
+        h.insert(header::CACHE_CONTROL, HeaderValue::from_static(cache));
+    }
 
     h.insert(
         header::STRICT_TRANSPORT_SECURITY,

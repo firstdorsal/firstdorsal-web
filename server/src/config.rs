@@ -30,6 +30,12 @@ pub struct Config {
     pub operator_emails: Vec<String>,
     /// Secure-Flag fürs Session-Cookie (aus, wenn PUBLIC_URL http:// ist).
     pub cookie_secure: bool,
+    /// Basis-URL des Whisper-Dienstes (whisper-asr-webservice); None =
+    /// Sprachnachrichten ohne Transkription.
+    pub whisper_url: Option<String>,
+    /// Test-/Dev-Modus: Mails als Dateien in dieses Verzeichnis schreiben
+    /// statt sie zu versenden (genutzt von den Playwright-E2E-Tests).
+    pub mail_file_dir: Option<PathBuf>,
 }
 
 fn env_or(key: &str, default: &str) -> String {
@@ -67,6 +73,14 @@ impl Config {
                 .map(|s| s.trim().to_ascii_lowercase())
                 .filter(|s| !s.is_empty())
                 .collect(),
+            whisper_url: std::env::var("WHISPER_URL")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .map(|v| v.trim_end_matches('/').to_string()),
+            mail_file_dir: std::env::var("MAIL_FILE_DIR")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from),
         })
     }
 

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Send, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Composer } from '@/components/chat/Composer'
+import { MessageBubble } from '@/components/chat/MessageBubble'
 import {
+  applyTranscript,
   deleteConversation,
   fetchConversationMessages,
   fetchConversations,
@@ -11,6 +14,7 @@ import {
   logout,
   openChatSocket,
   requestMagicLink,
+  sendOperatorMedia,
   sendOperatorMessage,
   type ChatConversation,
   type ChatMessage,
@@ -31,7 +35,6 @@ export function AdminChat() {
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [draft, setDraft] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<number | null>(null)
   selectedRef.current = selected
@@ -59,11 +62,18 @@ export function AdminChat() {
 
     const verbinden = () => {
       if (!aktiv) return
-      const ws = openChatSocket((msg) => {
-        refreshConversations()
-        if (msg.conversation_id === selectedRef.current) {
-          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
-        }
+      const ws = openChatSocket({
+        onMessage: (msg) => {
+          refreshConversations()
+          if (msg.conversation_id === selectedRef.current) {
+            setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+          }
+        },
+        onTranscript: (ev) => {
+          if (ev.conversation_id === selectedRef.current) {
+            setMessages((prev) => applyTranscript(prev, ev))
+          }
+        },
       })
       ws.addEventListener('close', () => {
         if (aktiv) timer = window.setTimeout(verbinden, 3000)
@@ -98,14 +108,26 @@ export function AdminChat() {
     else setFehler('Link konnte nicht verschickt werden.')
   }
 
-  async function antworten(e: React.FormEvent) {
-    e.preventDefault()
-    const text = draft.trim()
-    if (!text || selected === null) return
+  const addMessage = useCallback((msg: ChatMessage) => {
+    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+  }, [])
+
+  async function antworten(text: string) {
+    if (selected === null) return
+    setFehler('')
     try {
-      const msg = await sendOperatorMessage(selected, text)
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
-      setDraft('')
+      addMessage(await sendOperatorMessage(selected, text))
+      refreshConversations()
+    } catch {
+      setFehler('Senden fehlgeschlagen.')
+    }
+  }
+
+  async function medienAntworten(blob: Blob, filename: string) {
+    if (selected === null) return
+    setFehler('')
+    try {
+      addMessage(await sendOperatorMedia(selected, blob, filename))
       refreshConversations()
     } catch {
       setFehler('Senden fehlgeschlagen.')
@@ -233,37 +255,17 @@ export function AdminChat() {
               </div>
               <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
                 {messages.map((m) => (
-                  <div
+                  <MessageBubble
                     key={m.id}
-                    className={`max-w-[75%] rounded-md border border-border px-3 py-2 ${
-                      m.sender === 'operator' ? 'ml-auto bg-accent' : 'bg-secondary'
-                    }`}
-                  >
-                    <p className="text-sm/relaxed break-words whitespace-pre-wrap">
-                      {m.body_text}
-                    </p>
-                    <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                      {m.sender === 'operator' ? 'Sie' : aktive.email} ·{' '}
-                      {formatTime(m.created_at, 'de')}
-                    </p>
-                  </div>
+                    message={m}
+                    self={m.sender === 'operator'}
+                    senderLabel={m.sender === 'operator' ? 'Sie' : aktive.email}
+                    lang="de"
+                  />
                 ))}
               </div>
-              <form onSubmit={antworten} className="border-t border-border p-3">
-                {fehler && <p className="mb-2 text-xs text-destructive">{fehler}</p>}
-                <div className="flex gap-2">
-                  <input
-                    aria-label="Antwort schreiben"
-                    placeholder="Antwort schreiben …"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  />
-                  <Button type="submit" size="icon" aria-label="Antwort senden">
-                    <Send aria-hidden="true" />
-                  </Button>
-                </div>
-              </form>
+              {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
+              <Composer lang="de" onText={antworten} onMedia={medienAntworten} />
             </>
           ) : (
             <p className="annotation m-auto text-sm text-muted-foreground">

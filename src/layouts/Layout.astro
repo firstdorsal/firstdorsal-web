@@ -42,6 +42,18 @@ const ogImage = new URL('/og.png', Astro.site)
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- PWA: installierbar, Offline-Verhalten im Service Worker (sw.js). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta
+      name="theme-color"
+      content="#f4f0e5"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1b1714"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="canonical" href={canonical} />
     {
       alternates && (
@@ -94,6 +106,12 @@ const ogImage = new URL('/og.png', Astro.site)
         stored === 'dark' ||
         (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
       document.documentElement.classList.toggle('dark', dark)
+      // PWA-Service-Worker erst nach dem Laden registrieren (unkritisch).
+      if ('serviceWorker' in navigator) {
+        addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {})
+        })
+      }
     </script>
   </head>
   <body>

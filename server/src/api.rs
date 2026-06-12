@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use axum::extract::{Path, Query, State};
+use axum::extract::{DefaultBodyLimit, Multipart, Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{delete, get, post};
@@ -27,14 +27,32 @@ pub fn router(state: SharedState) -> Router {
         .route("/chat/api/auth/logout", post(logout))
         .route("/chat/api/me", get(me))
         .route("/chat/api/messages", get(customer_messages).post(customer_send))
+        .route("/chat/api/messages/media", post(customer_send_media))
+        .route("/chat/api/attachments/{id}", get(get_attachment))
         .route("/chat/api/admin/conversations", get(admin_conversations))
         .route(
             "/chat/api/admin/conversations/{id}/messages",
             get(admin_messages).post(admin_send),
         )
+        .route("/chat/api/admin/conversations/{id}/media", post(admin_send_media))
         .route("/chat/api/admin/conversations/{id}", delete(admin_delete))
+        // Uploads: Sprachnachrichten bis 25 MB, plus Multipart-Overhead.
+        .layer(DefaultBodyLimit::max(26 * 1024 * 1024))
         .with_state(state)
 }
+
+// Upload-Grenzen und MIME-Allowlist (kein SVG – kann Skripte enthalten).
+const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+const MAX_VOICE_BYTES: usize = 25 * 1024 * 1024;
+const IMAGE_MIMES: [&str; 4] = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const VOICE_MIMES: [&str; 6] = [
+    "audio/webm",
+    "audio/ogg",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/wav",
+    "audio/x-m4a",
+];
 
 // Fehler als knappes JSON; interne Fehler landen im Log, nicht beim Client.
 struct ApiError(StatusCode, &'static str);
@@ -245,6 +263,20 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> ApiResult<J
 // ---------- Nachrichten ----------
 
 fn message_json(row: &SqliteRow) -> Value {
+    // LEFT JOIN auf attachments: a_id NULL = reine Textnachricht.
+    let attachment = row
+        .get::<Option<i64>, _>("a_id")
+        .map(|a_id| {
+            json!({
+                "id": a_id,
+                "kind": row.get::<String, _>("a_kind"),
+                "mime": row.get::<String, _>("a_mime"),
+                "size": row.get::<i64, _>("a_size"),
+                "transcript": row.get::<Option<String>, _>("a_transcript"),
+                "transcript_status": row.get::<Option<String>, _>("a_status"),
+            })
+        })
+        .unwrap_or(Value::Null);
     json!({
         "id": row.get::<i64, _>("id"),
         "conversation_id": row.get::<i64, _>("conversation_id"),
@@ -252,14 +284,19 @@ fn message_json(row: &SqliteRow) -> Value {
         "kind": row.get::<String, _>("kind"),
         "body_text": row.get::<Option<String>, _>("body_text"),
         "created_at": row.get::<i64, _>("created_at"),
+        "attachment": attachment,
     })
 }
 
+const MESSAGE_SELECT: &str = "SELECT m.id, m.conversation_id, m.sender, m.kind, m.body_text, \
+            m.created_at, a.id AS a_id, a.kind AS a_kind, a.mime AS a_mime, a.size AS a_size, \
+            a.transcript AS a_transcript, a.transcript_status AS a_status \
+     FROM messages m LEFT JOIN attachments a ON a.id = m.attachment_id";
+
 async fn list_messages(state: &SharedState, conversation_id: i64) -> ApiResult<Json<Value>> {
-    let rows = sqlx::query(
-        "SELECT id, conversation_id, sender, kind, body_text, created_at \
-         FROM messages WHERE conversation_id = ? ORDER BY id LIMIT 500",
-    )
+    let rows = sqlx::query(&format!(
+        "{MESSAGE_SELECT} WHERE m.conversation_id = ? ORDER BY m.id LIMIT 500"
+    ))
     .bind(conversation_id)
     .fetch_all(&state.db)
     .await?;
@@ -302,11 +339,175 @@ async fn insert_message(
         "kind": "text",
         "body_text": text,
         "created_at": created_at,
+        "attachment": Value::Null,
     });
     state
         .hub
         .publish(conversation_id, json!({ "type": "message", "message": msg }).to_string());
     Ok(msg)
+}
+
+/// Nimmt das Multipart-Feld "file" an, legt den Blob content-addressed
+/// unter DATA_DIR/uploads ab und hängt ihn als Bild- oder Sprachnachricht
+/// an die Konversation. Sprachnachrichten gehen anschließend asynchron
+/// zur Transkription.
+async fn save_media(
+    state: &SharedState,
+    conversation_id: i64,
+    sender: &str,
+    mut multipart: Multipart,
+) -> ApiResult<Value> {
+    let field = loop {
+        match multipart.next_field().await {
+            Ok(Some(f)) if f.name() == Some("file") => break f,
+            Ok(Some(_)) => continue,
+            _ => return Err(ApiError(StatusCode::UNPROCESSABLE_ENTITY, "missing_file")),
+        }
+    };
+    // MediaRecorder liefert z. B. "audio/webm;codecs=opus" – für die
+    // Allowlist zählt der Basistyp.
+    let mime_full = field.content_type().unwrap_or("").to_string();
+    let mime = mime_full.split(';').next().unwrap_or("").trim().to_string();
+    let kind = if IMAGE_MIMES.contains(&mime.as_str()) {
+        "image"
+    } else if VOICE_MIMES.contains(&mime.as_str()) {
+        "voice"
+    } else {
+        return Err(ApiError(StatusCode::UNPROCESSABLE_ENTITY, "unsupported_type"));
+    };
+    let bytes = field
+        .bytes()
+        .await
+        .map_err(|_| ApiError(StatusCode::PAYLOAD_TOO_LARGE, "too_large"))?;
+    let max = if kind == "image" { MAX_IMAGE_BYTES } else { MAX_VOICE_BYTES };
+    if bytes.is_empty() || bytes.len() > max {
+        return Err(ApiError(StatusCode::PAYLOAD_TOO_LARGE, "too_large"));
+    }
+
+    let sha256: String = {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(&bytes).iter().map(|b| format!("{b:02x}")).collect()
+    };
+    let uploads = state.cfg.data_dir.join("uploads");
+    tokio::fs::create_dir_all(&uploads)
+        .await
+        .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
+    let blob_path = uploads.join(&sha256);
+    if tokio::fs::metadata(&blob_path).await.is_err() {
+        tokio::fs::write(&blob_path, &bytes)
+            .await
+            .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
+    }
+
+    // Transkription nur, wenn ein Whisper-Dienst konfiguriert ist.
+    let transcript_status = (kind == "voice" && state.cfg.whisper_url.is_some()).then_some("pending");
+    let created_at = now();
+    let attachment_id = sqlx::query(
+        "INSERT INTO attachments (kind, mime, size, sha256, transcript_status, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(kind)
+    .bind(&mime)
+    .bind(bytes.len() as i64)
+    .bind(&sha256)
+    .bind(transcript_status)
+    .bind(created_at)
+    .execute(&state.db)
+    .await?
+    .last_insert_rowid();
+    let message_id = sqlx::query(
+        "INSERT INTO messages (conversation_id, sender, kind, attachment_id, created_at) \
+         VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(conversation_id)
+    .bind(sender)
+    .bind(kind)
+    .bind(attachment_id)
+    .bind(created_at)
+    .execute(&state.db)
+    .await?
+    .last_insert_rowid();
+    sqlx::query("UPDATE conversations SET last_message_at = ? WHERE id = ?")
+        .bind(created_at)
+        .bind(conversation_id)
+        .execute(&state.db)
+        .await?;
+
+    let msg = json!({
+        "id": message_id,
+        "conversation_id": conversation_id,
+        "sender": sender,
+        "kind": kind,
+        "body_text": Value::Null,
+        "created_at": created_at,
+        "attachment": {
+            "id": attachment_id,
+            "kind": kind,
+            "mime": mime,
+            "size": bytes.len(),
+            "transcript": Value::Null,
+            "transcript_status": transcript_status,
+        },
+    });
+    state
+        .hub
+        .publish(conversation_id, json!({ "type": "message", "message": msg }).to_string());
+
+    if transcript_status.is_some() {
+        crate::whisper::spawn_transcription(
+            state.clone(),
+            attachment_id,
+            message_id,
+            conversation_id,
+            blob_path,
+            mime_full,
+        );
+    }
+    Ok(msg)
+}
+
+/// Liefert einen Upload aus – Kunden nur aus der eigenen Konversation.
+async fn get_attachment(
+    State(state): State<SharedState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+) -> ApiResult<Response> {
+    let session = auth::session_from_headers(&state.db, &headers)
+        .await
+        .ok_or(UNAUTHORIZED)?;
+    let row = sqlx::query(
+        "SELECT a.mime, a.sha256, m.conversation_id FROM attachments a \
+         JOIN messages m ON m.attachment_id = a.id WHERE a.id = ?",
+    )
+    .bind(id)
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or(ApiError(StatusCode::NOT_FOUND, "not_found"))?;
+    if session.role != "operator" {
+        let own = sqlx::query("SELECT id FROM conversations WHERE customer_id = ?")
+            .bind(session.customer_id.unwrap_or(-1))
+            .fetch_optional(&state.db)
+            .await?
+            .map(|r| r.get::<i64, _>("id"));
+        if own != Some(row.get::<i64, _>("conversation_id")) {
+            return Err(ApiError(StatusCode::NOT_FOUND, "not_found"));
+        }
+    }
+    let mime: String = row.get("mime");
+    let sha256: String = row.get("sha256");
+    let bytes = tokio::fs::read(state.cfg.data_dir.join("uploads").join(&sha256))
+        .await
+        .map_err(|e| ApiError::from(anyhow::Error::from(e)))?;
+    Ok((
+        [
+            (header::CONTENT_TYPE, mime),
+            (header::CONTENT_DISPOSITION, "inline".to_string()),
+            // Content-addressed: darf der Browser dauerhaft (privat) cachen.
+            (header::CACHE_CONTROL, "private, max-age=31536000, immutable".to_string()),
+        ],
+        bytes,
+    )
+        .into_response())
 }
 
 #[derive(Deserialize)]
@@ -338,6 +539,16 @@ async fn customer_send(
 ) -> ApiResult<Json<Value>> {
     let (_, conversation_id) = require_customer(&state, &headers).await?;
     let msg = insert_message(&state, conversation_id, "customer", &body.text).await?;
+    Ok(Json(msg))
+}
+
+async fn customer_send_media(
+    State(state): State<SharedState>,
+    headers: HeaderMap,
+    multipart: Multipart,
+) -> ApiResult<Json<Value>> {
+    let (_, conversation_id) = require_customer(&state, &headers).await?;
+    let msg = save_media(&state, conversation_id, "customer", multipart).await?;
     Ok(Json(msg))
 }
 
@@ -416,8 +627,22 @@ async fn admin_send(
     Ok(Json(msg))
 }
 
+async fn admin_send_media(
+    State(state): State<SharedState>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+    multipart: Multipart,
+) -> ApiResult<Json<Value>> {
+    require_operator(&state, &headers).await?;
+    conversation_exists(&state, id).await?;
+    let msg = save_media(&state, id, "operator", multipart).await?;
+    Ok(Json(msg))
+}
+
 /// Manuelles Löschen einer Konversation (DSGVO: Löschung auf Anfrage);
-/// Nachrichten hängen per ON DELETE CASCADE dran.
+/// Nachrichten hängen per ON DELETE CASCADE dran, Attachments und ihre
+/// Blobs werden explizit mit entfernt (sofern kein anderes Attachment
+/// denselben content-addressed Blob nutzt).
 async fn admin_delete(
     State(state): State<SharedState>,
     headers: HeaderMap,
@@ -425,9 +650,32 @@ async fn admin_delete(
 ) -> ApiResult<Json<Value>> {
     require_operator(&state, &headers).await?;
     conversation_exists(&state, id).await?;
+
+    let attachments = sqlx::query(
+        "SELECT a.id, a.sha256 FROM attachments a \
+         JOIN messages m ON m.attachment_id = a.id WHERE m.conversation_id = ?",
+    )
+    .bind(id)
+    .fetch_all(&state.db)
+    .await?;
     sqlx::query("DELETE FROM conversations WHERE id = ?")
         .bind(id)
         .execute(&state.db)
         .await?;
+    for row in &attachments {
+        let (attachment_id, sha256): (i64, String) = (row.get("id"), row.get("sha256"));
+        sqlx::query("DELETE FROM attachments WHERE id = ?")
+            .bind(attachment_id)
+            .execute(&state.db)
+            .await?;
+        let verbleibend: i64 = sqlx::query("SELECT COUNT(*) AS n FROM attachments WHERE sha256 = ?")
+            .bind(&sha256)
+            .fetch_one(&state.db)
+            .await?
+            .get("n");
+        if verbleibend == 0 {
+            let _ = tokio::fs::remove_file(state.cfg.data_dir.join("uploads").join(&sha256)).await;
+        }
+    }
     Ok(Json(json!({ "ok": true })))
 }

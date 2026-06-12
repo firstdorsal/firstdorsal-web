@@ -7,5 +7,8 @@ export default getViteConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // Nur Unit-/Komponententests – die Playwright-Specs (e2e/) laufen
+    // über `pnpm test:e2e`.
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

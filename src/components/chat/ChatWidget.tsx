@@ -1,17 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MessageCircle, Send, X } from 'lucide-react'
+import { MessageCircle, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Composer } from '@/components/chat/Composer'
+import { MessageBubble, PendingBubble } from '@/components/chat/MessageBubble'
 import {
+  applyTranscript,
   fetchMe,
   fetchMessages,
-  formatTime,
   logout,
   openChatSocket,
   requestMagicLink,
+  sendMedia,
   sendMessage,
   type ChatMessage,
 } from '@/lib/chat'
+import {
+  cacheMessages,
+  cachedMessages,
+  outboxAdd,
+  outboxAll,
+  outboxRemove,
+  type OutboxEntry,
+} from '@/lib/offline'
 import type { Lang } from '@/lib/i18n'
 
 const texte = {
@@ -29,11 +40,10 @@ const texte = {
     verschickt:
       'Fast geschafft: Wir haben Ihnen einen Anmeldelink geschickt. Bitte prüfen Sie Ihren Posteingang (auch den Spam-Ordner).',
     leer: 'Noch keine Nachrichten – erzählen Sie uns, wo es weh tut.',
-    placeholder: 'Nachricht schreiben …',
-    senden: 'Nachricht senden',
     abmelden: 'Abmelden',
     operatorHinweis: 'Sie sind als Operator angemeldet – zur Verwaltung geht es hier:',
     adminLink: 'Chat-Verwaltung öffnen',
+    offline: 'Offline – Nachrichten werden gesendet, sobald Sie wieder online sind.',
     fehlerEmail: 'Bitte eine gültige E-Mail-Adresse angeben.',
     fehlerRate: 'Zu viele Versuche – bitte warten Sie einen Moment.',
     fehlerMail: 'Der Link konnte nicht verschickt werden – bitte später erneut versuchen.',
@@ -54,11 +64,10 @@ const texte = {
     verschickt:
       'Almost there: we sent you a sign-in link. Please check your inbox (and the spam folder).',
     leer: 'No messages yet – tell us where it hurts.',
-    placeholder: 'Write a message …',
-    senden: 'Send message',
     abmelden: 'Sign out',
     operatorHinweis: 'You are signed in as the operator – manage chats here:',
     adminLink: 'Open chat admin',
+    offline: 'Offline – messages will be sent as soon as you are back online.',
     fehlerEmail: 'Please enter a valid email address.',
     fehlerRate: 'Too many attempts – please wait a moment.',
     fehlerMail: 'The link could not be sent – please try again later.',
@@ -72,8 +81,10 @@ type Phase = 'laden' | 'anonym' | 'verschickt' | 'chat' | 'operator'
 
 // Kunden-Chat als schwebende Insel: E-Mail → Magic-Link → Chat. Nach dem
 // Klick auf den Link landet man mit ?chat=open wieder hier, das Widget
-// öffnet sich dann von selbst. Empfang neuer Nachrichten per WebSocket
-// (mit Auto-Reconnect), gesendet wird per REST.
+// öffnet sich dann von selbst. Empfang neuer Nachrichten und Transkripte
+// per WebSocket (Auto-Reconnect), gesendet wird per REST. Offline gehen
+// Nachrichten jeder Art in die IndexedDB-Outbox (PWA) und werden beim
+// nächsten Online-Gehen zugestellt.
 export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
   const t = texte[lang]
   const [open, setOpen] = useState(false)
@@ -81,15 +92,39 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
   const [email, setEmail] = useState('')
   const [fehler, setFehler] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [draft, setDraft] = useState('')
-  const [sending, setSending] = useState(false)
+  const [pending, setPending] = useState<OutboxEntry[]>([])
+  const [istOffline, setIstOffline] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectRef = useRef<number | null>(null)
+  const flushingRef = useRef(false)
 
   const addMessage = useCallback((msg: ChatMessage) => {
     setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
   }, [])
+
+  /** Outbox abarbeiten: der Reihe nach senden, bei Netzfehler abbrechen. */
+  const flushOutbox = useCallback(async () => {
+    if (flushingRef.current) return
+    flushingRef.current = true
+    try {
+      for (const entry of await outboxAll()) {
+        try {
+          const msg =
+            entry.kind === 'text'
+              ? await sendMessage(entry.text ?? '')
+              : await sendMedia(entry.blob as Blob, entry.filename ?? 'datei')
+          addMessage(msg)
+          if (entry.id != null) await outboxRemove(entry.id)
+        } catch (e) {
+          if (e instanceof TypeError) break // weiterhin offline
+          if (entry.id != null) await outboxRemove(entry.id) // unsendbarer Eintrag
+        }
+      }
+    } finally {
+      flushingRef.current = false
+      setPending(await outboxAll())
+      setIstOffline(!navigator.onLine)
+    }
+  }, [addMessage])
 
   // Nach dem Magic-Link-Redirect (?chat=open) direkt öffnen.
   useEffect(() => {
@@ -112,34 +147,64 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
     }
   }, [open, phase])
 
-  // Im Chat: Verlauf laden + WebSocket mit Auto-Reconnect halten.
+  // Im Chat: Verlauf laden (offline: aus dem Cache), Outbox anstoßen und
+  // WebSocket mit Auto-Reconnect halten.
   useEffect(() => {
     if (!open || phase !== 'chat') return
     let aktiv = true
+    let timer: number | null = null
+    let ws: WebSocket | null = null
+    setIstOffline(!navigator.onLine)
+
     fetchMessages()
-      .then((msgs) => aktiv && setMessages(msgs))
-      .catch(() => {})
+      .then((msgs) => {
+        if (!aktiv) return
+        setMessages(msgs)
+        void flushOutbox()
+      })
+      .catch(async () => {
+        if (aktiv) setMessages(await cachedMessages())
+      })
+    outboxAll().then((p) => aktiv && setPending(p))
+
+    const onOnline = () => {
+      setIstOffline(false)
+      void flushOutbox()
+    }
+    const onOffline = () => setIstOffline(true)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
 
     const verbinden = () => {
       if (!aktiv) return
-      const ws = openChatSocket(addMessage)
-      wsRef.current = ws
+      ws = openChatSocket({
+        onMessage: addMessage,
+        onTranscript: (ev) => setMessages((prev) => applyTranscript(prev, ev)),
+      })
+      ws.addEventListener('open', () => void flushOutbox())
       ws.addEventListener('close', () => {
-        if (aktiv) reconnectRef.current = window.setTimeout(verbinden, 3000)
+        if (aktiv) timer = window.setTimeout(verbinden, 3000)
       })
     }
     verbinden()
     return () => {
       aktiv = false
-      if (reconnectRef.current) clearTimeout(reconnectRef.current)
-      wsRef.current?.close()
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+      ws?.close()
     }
-  }, [open, phase, addMessage])
+  }, [open, phase, addMessage, flushOutbox])
+
+  // Verlauf für die Offline-Ansicht aktuell halten.
+  useEffect(() => {
+    if (phase === 'chat' && messages.length > 0) void cacheMessages(messages)
+  }, [phase, messages])
 
   // Neue Nachrichten ins Sichtfeld scrollen.
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages])
+  }, [messages, pending])
 
   async function linkAnfordern(e: React.FormEvent) {
     e.preventDefault()
@@ -151,21 +216,29 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
     else setFehler(t.fehlerMail)
   }
 
-  async function nachrichtSenden(e: React.FormEvent) {
-    e.preventDefault()
-    const text = draft.trim()
-    if (!text || sending) return
-    setSending(true)
+  /** Senden mit Offline-Fallback: Netzfehler → Outbox statt Fehlermeldung. */
+  async function sendenOderEinreihen(entry: OutboxEntry, senden: () => Promise<ChatMessage>) {
     setFehler('')
     try {
-      addMessage(await sendMessage(text))
-      setDraft('')
-    } catch {
-      setFehler(t.fehlerSenden)
-    } finally {
-      setSending(false)
+      addMessage(await senden())
+    } catch (e) {
+      if (e instanceof TypeError) {
+        await outboxAdd(entry)
+        setPending(await outboxAll())
+        setIstOffline(true)
+      } else {
+        setFehler(t.fehlerSenden)
+      }
     }
   }
+
+  const textSenden = (text: string) =>
+    sendenOderEinreihen({ kind: 'text', text, queued_at: Date.now() }, () => sendMessage(text))
+
+  const medienSenden = (blob: Blob, filename: string) =>
+    sendenOderEinreihen({ kind: 'media', blob, filename, queued_at: Date.now() }, () =>
+      sendMedia(blob, filename),
+    )
 
   async function abmelden() {
     await logout()
@@ -253,7 +326,10 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
       {phase === 'operator' && (
         <div className="flex flex-1 flex-col justify-center gap-4 p-5 text-center">
           <p className="text-sm/relaxed">{t.operatorHinweis}</p>
-          <a href="/chat/admin/" className="text-sm font-medium text-brand underline underline-offset-2">
+          <a
+            href="/chat/admin/"
+            className="text-sm font-medium text-brand underline underline-offset-2"
+          >
             {t.adminLink}
           </a>
         </div>
@@ -261,41 +337,32 @@ export function ChatWidget({ lang = 'de' }: { lang?: Lang }) {
 
       {phase === 'chat' && (
         <>
+          {istOffline && (
+            <p className="border-b border-border bg-secondary px-4 py-2 text-xs text-muted-foreground">
+              {t.offline}
+            </p>
+          )}
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-            {messages.length === 0 && (
+            {messages.length === 0 && pending.length === 0 && (
               <p className="annotation py-6 text-center text-sm text-muted-foreground">
                 {t.leer}
               </p>
             )}
             {messages.map((m) => (
-              <div
+              <MessageBubble
                 key={m.id}
-                className={`max-w-[85%] rounded-md border border-border px-3 py-2 ${
-                  m.sender === 'customer' ? 'ml-auto bg-accent' : 'bg-secondary'
-                }`}
-              >
-                <p className="text-sm/relaxed break-words whitespace-pre-wrap">{m.body_text}</p>
-                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                  {m.sender === 'customer' ? t.ich : t.firma} · {formatTime(m.created_at, lang)}
-                </p>
-              </div>
+                message={m}
+                self={m.sender === 'customer'}
+                senderLabel={m.sender === 'customer' ? t.ich : t.firma}
+                lang={lang}
+              />
+            ))}
+            {pending.map((p) => (
+              <PendingBubble key={`pending-${p.id}`} entry={p} lang={lang} />
             ))}
           </div>
-          <form onSubmit={nachrichtSenden} className="border-t border-border p-3">
-            {fehler && <p className="mb-2 text-xs text-destructive">{fehler}</p>}
-            <div className="flex gap-2">
-              <input
-                aria-label={t.placeholder}
-                placeholder={t.placeholder}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              />
-              <Button type="submit" size="icon" aria-label={t.senden} disabled={sending}>
-                <Send aria-hidden="true" />
-              </Button>
-            </div>
-          </form>
+          {fehler && <p className="px-4 pb-1 text-xs text-destructive">{fehler}</p>}
+          <Composer lang={lang} onText={textSenden} onMedia={medienSenden} />
         </>
       )}
     </div>

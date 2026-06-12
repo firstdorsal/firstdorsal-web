@@ -8,6 +8,7 @@ mod config;
 mod db;
 mod mail;
 mod statics;
+mod whisper;
 mod ws;
 
 use std::sync::Arc;
