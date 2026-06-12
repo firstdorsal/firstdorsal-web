@@ -1,0 +1,47 @@
+---
+/**
+ * LILO-Logo — zwei ineinandergreifende Ringe, die ein viergeteiltes
+ * "Blütenkreuz" bilden (Konzept S. 21/22: "zwei ineinandergreifende Ringe …
+ * das visuelle Fundament eines Festivals, das als Hochzeit begann").
+ * Strich folgt currentColor, lässt sich also einfärben.
+ */
+interface Props {
+  class?: string;
+  title?: string;
+}
+const { class: className, title = "LILO – Laut in Love" } = Astro.props;
+---
+
+<svg
+  class={className}
+  viewBox="0 0 320 320"
+  role="img"
+  aria-label={title}
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title>{title}</title>
+  <g stroke="currentColor" stroke-width="6" stroke-linecap="round">
+    <!-- zwei zueinander gedrehte Ellipsen = vier Blütenblätter -->
+    <ellipse cx="160" cy="160" rx="150" ry="78" transform="rotate(45 160 160)" />
+    <ellipse cx="160" cy="160" rx="150" ry="78" transform="rotate(-45 160 160)" />
+  </g>
+  <!-- konkave Cusps an N / O / S / W als kleine Pfeil-Dreiecke -->
+  <g fill="currentColor">
+    <path d="M160 36 l16 26 h-32 z" />
+    <path d="M284 160 l-26 16 v-32 z" />
+    <path d="M160 284 l-16 -26 h32 z" />
+    <path d="M36 160 l26 -16 v32 z" />
+  </g>
+  <!-- Wortmarke -->
+  <text
+    x="160"
+    y="160"
+    text-anchor="middle"
+    dominant-baseline="central"
+    fill="currentColor"
+    font-family="Anton, sans-serif"
+    font-size="64"
+    letter-spacing="2"
+  >LILO</text>
+</svg>

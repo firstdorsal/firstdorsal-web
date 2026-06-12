@@ -1,0 +1,541 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Hero from "../components/Hero.astro";
+import Marquee from "../components/Marquee.astro";
+import LiloLogo from "../components/LiloLogo.astro";
+import Countdown from "../components/Countdown.tsx";
+import SignupForm from "../components/SignupForm.tsx";
+
+const palette = [
+  { name: "Industrial Anthrazit", hex: "#27262c" },
+  { name: "Ultraviolet", hex: "#7947e8" },
+  { name: "Majorelle Blue", hex: "#742df7" },
+  { name: "Medium Jungle", hex: "#3a9a38" },
+  { name: "Laser Green", hex: "#44f72d" },
+];
+
+const pillars = [
+  {
+    no: "01",
+    title: "Channel",
+    body: "WhatsApp- & Telegram-Channel: Save the Date, Call for Participation, wichtige Infos und der Countdown zum Festival.",
+  },
+  {
+    no: "02",
+    title: "Mail-Verteiler",
+    body: "Rückblicke, Artist Features, Hinter den Kulissen, Spotify-Playlists und Toms ultimative Packliste.",
+  },
+  {
+    no: "03",
+    title: "Merch & Onsite",
+    body: "Save-Use-Kits, Onsite-Branding, Armbänder, Stempel und Kleidung — laut auf dem Gelände und danach.",
+  },
+];
+
+const facts = [
+  { k: "Datum", v: "28.—31. August 2026" },
+  { k: "Format", v: "Festival eines Freundeskreises" },
+  { k: "Tonality", v: "Underground · Techno-Driven" },
+  { k: "Motto", v: "United by Friendship" },
+];
+---
+
+<Layout>
+  <Nav />
+  <Hero />
+  <Marquee />
+
+  <!-- ============ MISSION ============ -->
+  <section class="section" id="mission">
+    <div class="container mission">
+      <div class="mission__head" data-reveal>
+        <p class="eyebrow">01 — Mission Statement</p>
+        <h2 class="mission__title">
+          Mehr als ein Festival.<br />
+          <span class="grad">Ein kollektives Herzklopfen.</span>
+        </h2>
+      </div>
+      <div class="mission__body" data-reveal>
+        <p>
+          <strong>Laut in Love</strong> — das ist unsere Antwort auf die Frage,
+          was passiert, wenn aus einem „Ja-Wort“ ein gemeinsamer Rhythmus wird.
+        </p>
+        <p>
+          Was als private Feier zweier Menschen begann, wächst zu etwas, das weit
+          über den Moment hinausreicht. Hier wird Liebe nicht nur gefühlt — sie
+          wird gelebt, geteilt und vor allem <em>laut zelebriert</em>.
+        </p>
+        <ul class="facts">
+          {
+            facts.map((f) => (
+              <li>
+                <span class="facts__k">{f.k}</span>
+                <span class="facts__v">{f.v}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIBE / INSPIRATION ============ -->
+  <section class="section section--dark" id="vibe">
+    <div class="container">
+      <div class="vibe__head" data-reveal>
+        <p class="eyebrow">02 — Route „laut“</p>
+        <h2 class="vibe__title">
+          Raw. Ungeschliffen.<br /><span class="outline-2">Authentisch.</span>
+        </h2>
+        <p class="vibe__intro">
+          Diese Route schöpft ihre Kraft aus der kollektiven Ekstase der
+          Musikkultur — eine visuelle Hommage an die verbindende Kraft des
+          Rhythmus. Inspiriert von analogen Synthesizern, dunklen Kellerräumen
+          und den Covern alter Techno-Alben.
+        </p>
+      </div>
+
+      <div class="vibe__grid">
+        <article class="card" data-reveal>
+          <h3>Kernbotschaft</h3>
+          <p>
+            So vielfältig die Genres, so heterogen unser Freundeskreis: Musik ist
+            der Klebstoff, der unterschiedliche Persönlichkeiten zu einem
+            harmonischen, lauten Ganzen werden lässt.
+          </p>
+        </article>
+        <article class="card" data-reveal>
+          <h3>Tonality</h3>
+          <p>
+            Underground: raw, ungeschliffen und authentisch. Techno-driven und
+            kraftvoll — tief verwurzelt im 90er-Techno-Erbe.
+          </p>
+        </article>
+        <article class="card" data-reveal>
+          <h3>Look &amp; Feel</h3>
+          <p>
+            Bold, kinetisch und kompromisslos. Pulsierende Hitzezonen verschwimmen
+            in semi-transparenten Layern und rauem Grain — das visuelle Echo eines
+            Raves.
+          </p>
+        </article>
+      </div>
+
+      <div class="palette" data-reveal>
+        <p class="palette__label">United by Friendship — die Farbpalette</p>
+        <div class="palette__row">
+          {
+            palette.map((c) => (
+              <div class="swatch" style={`--c:${c.hex}`}>
+                <div class="swatch__chip" />
+                <span class="swatch__name">{c.name}</span>
+                <span class="swatch__hex">{c.hex}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COUNTDOWN ============ -->
+  <section class="section section--count" id="countdown">
+    <div class="container count">
+      <div class="count__logo" data-reveal>
+        <LiloLogo class="count__mark" />
+      </div>
+      <p class="eyebrow" data-reveal>Vorhang auf für das…</p>
+      <h2 class="count__title" data-reveal>Countdown zum Festival</h2>
+      <div class="count__timer" data-reveal>
+        <Countdown client:visible />
+      </div>
+      <p class="count__date" data-reveal>28 — 31 · 08 · 2026 · Wir sind laut.</p>
+    </div>
+  </section>
+
+  <Marquee items={["SAVE THE DATE", "CALL FOR PARTICIPATION", "COUNTDOWN", "LAUT IN LOVE"]} reverse />
+
+  <!-- ============ MITMACHEN / MESSAGING ============ -->
+  <section class="section" id="mitmachen">
+    <div class="container">
+      <div class="mit__head" data-reveal>
+        <p class="eyebrow">03 — Messaging &amp; Mitmachen</p>
+        <h2 class="mit__title">Drei Säulen. Ein lautes Ganzes.</h2>
+        <p class="mit__intro">
+          Wir strukturieren das Messaging auf Basis von drei Säulen — damit
+          niemand aus dem Freundeskreis einen Beat verpasst.
+        </p>
+      </div>
+
+      <div class="pillars">
+        {
+          pillars.map((p) => (
+            <article class="pillar" data-reveal>
+              <span class="pillar__no">{p.no}</span>
+              <h3 class="pillar__title">{p.title}</h3>
+              <p class="pillar__body">{p.body}</p>
+            </article>
+          ))
+        }
+      </div>
+
+      <div class="signup" data-reveal>
+        <div class="signup__copy">
+          <h3 class="signup__title">Save the Date</h3>
+          <p>
+            Trag dich ein und sei bei Call for Participation, Line-up-Reveals und
+            dem Countdown live dabei.
+          </p>
+        </div>
+        <SignupForm client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <LiloLogo class="footer__logo" />
+        <div>
+          <p class="footer__word">LAUT IN LOVE</p>
+          <p class="footer__sub">LILO 2026 · United by Friendship</p>
+        </div>
+      </div>
+      <div class="footer__bar" aria-hidden="true">
+        {palette.map((c) => <span style={`background:${c.hex}`} />)}
+      </div>
+      <p class="footer__legal">
+        © 2026 Laut in Love — ein Festival eines Freundeskreises. Konzept Route 1
+        „laut“. Wir sind laut.
+      </p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  .section {
+    padding-block: clamp(4rem, 10vw, 8rem);
+    position: relative;
+  }
+  .section--dark {
+    background: var(--bg-panel);
+    border-block: 1px solid var(--line);
+  }
+
+  .grad {
+    background: var(--thermal-soft);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .outline-2 {
+    color: transparent;
+    -webkit-text-stroke: 2px var(--laser);
+  }
+
+  /* ---- Mission ---- */
+  .mission {
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+  .mission__title {
+    font-size: clamp(2.4rem, 8vw, 5rem);
+    margin-top: 1.2rem;
+  }
+  .mission__body p {
+    font-size: clamp(1rem, 2.6vw, 1.2rem);
+    color: var(--ink-dim);
+    max-width: 62ch;
+  }
+  .mission__body strong {
+    color: var(--ink);
+  }
+  .mission__body em {
+    color: var(--laser);
+    font-style: normal;
+  }
+  .facts {
+    list-style: none;
+    margin: 2.4rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .facts li {
+    background: var(--bg);
+    padding: 1.1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .facts__k {
+    font-size: 0.66rem;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--laser);
+    font-weight: 700;
+  }
+  .facts__v {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* ---- Vibe ---- */
+  .vibe__title {
+    font-size: clamp(2.4rem, 8vw, 5rem);
+    margin-top: 1.1rem;
+  }
+  .vibe__intro {
+    margin-top: 1.4rem;
+    max-width: 60ch;
+    color: var(--ink-dim);
+    font-size: clamp(1rem, 2.6vw, 1.15rem);
+  }
+  .vibe__grid {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.6rem;
+    background: linear-gradient(180deg, rgba(116, 45, 247, 0.07), transparent);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover {
+    border-color: var(--majorelle);
+    box-shadow: 0 0 50px rgba(116, 45, 247, 0.18);
+  }
+  .card h3 {
+    font-size: 1.5rem;
+    color: var(--laser);
+    margin-bottom: 0.7rem;
+  }
+  .card p {
+    color: var(--ink-dim);
+    font-size: 0.95rem;
+  }
+
+  /* ---- Palette ---- */
+  .palette {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+  }
+  .palette__label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 1rem;
+  }
+  .palette__row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+  }
+  .swatch {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.7rem;
+    background: var(--bg);
+  }
+  .swatch__chip {
+    height: 64px;
+    border-radius: 6px;
+    background: var(--c);
+    box-shadow: 0 0 30px -6px var(--c);
+  }
+  .swatch__name {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+  .swatch__hex {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* ---- Countdown ---- */
+  .section--count {
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 30%, rgba(116, 45, 247, 0.18), transparent 70%),
+      var(--bg);
+    text-align: center;
+  }
+  .count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .count__mark {
+    width: clamp(80px, 22vw, 130px);
+    height: clamp(80px, 22vw, 130px);
+    color: var(--laser);
+    filter: drop-shadow(0 0 26px rgba(68, 247, 45, 0.4));
+  }
+  .count__title {
+    font-size: clamp(2.2rem, 8vw, 4.5rem);
+    margin: 1rem 0 2rem;
+  }
+  .count__timer {
+    width: 100%;
+    max-width: 560px;
+  }
+  .count__date {
+    margin-top: 1.6rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+  }
+
+  /* ---- Mitmachen ---- */
+  .mit__title {
+    font-size: clamp(2.2rem, 7vw, 4.2rem);
+    margin-top: 1.1rem;
+  }
+  .mit__intro {
+    margin-top: 1.2rem;
+    max-width: 56ch;
+    color: var(--ink-dim);
+  }
+  .pillars {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .pillar {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .pillar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--thermal);
+  }
+  .pillar__no {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    color: var(--majorelle);
+  }
+  .pillar__title {
+    font-size: 1.5rem;
+    margin: 0.3rem 0 0.6rem;
+  }
+  .pillar__body {
+    color: var(--ink-dim);
+    font-size: 0.95rem;
+  }
+
+  .signup {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: clamp(1.6rem, 4vw, 2.6rem);
+    background: linear-gradient(135deg, rgba(116, 45, 247, 0.1), rgba(68, 247, 45, 0.04));
+    display: grid;
+    gap: 1.6rem;
+  }
+  .signup__title {
+    font-size: 2rem;
+    color: var(--laser);
+  }
+  .signup__copy p {
+    color: var(--ink-dim);
+    max-width: 46ch;
+    margin-top: 0.4rem;
+  }
+
+  /* ---- Footer ---- */
+  .footer {
+    border-top: 1px solid var(--line);
+    padding-block: 3rem;
+    background: var(--bg-panel);
+  }
+  .footer__inner {
+    display: grid;
+    gap: 1.6rem;
+  }
+  .footer__brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .footer__logo {
+    width: 56px;
+    height: 56px;
+    color: var(--laser);
+  }
+  .footer__word {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin: 0;
+  }
+  .footer__sub {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+  }
+  .footer__bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .footer__legal {
+    font-size: 0.76rem;
+    color: var(--ink-dim);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  /* ---- Responsive ---- */
+  @media (min-width: 760px) {
+    .mission {
+      grid-template-columns: 0.9fr 1.1fr;
+      align-items: start;
+    }
+    .vibe__grid,
+    .pillars {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .palette__row {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .signup {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
+    .footer__inner {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+    .footer__legal {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

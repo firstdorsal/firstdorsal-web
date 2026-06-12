@@ -1,0 +1,74 @@
+---
+interface Props {
+  items?: string[];
+  reverse?: boolean;
+}
+const {
+  items = ["LAUT IN LOVE", "28—31 · 08 · 2026", "UNITED BY FRIENDSHIP", "WIR SIND LAUT"],
+  reverse = false,
+} = Astro.props;
+
+const sep = "✦";
+const line = items.flatMap((i) => [i, sep]);
+---
+
+<div class="marquee" data-reverse={reverse}>
+  <div class="marquee__track">
+    {
+      [0, 1].map(() => (
+        <span class="marquee__group" aria-hidden={true}>
+          {line.map((word) => (
+            <span class="marquee__word">{word}</span>
+          ))}
+        </span>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .marquee {
+    overflow: hidden;
+    border-block: 1px solid var(--line);
+    background: var(--anthracite);
+    padding-block: 0.55rem;
+    user-select: none;
+  }
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    animation: scroll 28s linear infinite;
+  }
+  .marquee[data-reverse="true"] .marquee__track {
+    animation-direction: reverse;
+  }
+  .marquee__group {
+    display: flex;
+    align-items: center;
+  }
+  .marquee__word {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    padding-inline: 1.1rem;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .marquee__word:nth-child(4n + 2) {
+    color: var(--laser);
+  }
+  .marquee__word:nth-child(4n) {
+    color: var(--majorelle);
+  }
+  @keyframes scroll {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+    }
+  }
+</style>
