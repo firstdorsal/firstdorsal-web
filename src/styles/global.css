@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/* Das wiederverwendbare Chat-Paket (@webchat/react) liegt als
+   pnpm-Workspace unter packages/ und wird über node_modules eingebunden –
+   Tailwind v4 überspringt node_modules bei der automatischen Erkennung,
+   daher die Quelldateien explizit zum Scannen anmelden. */
+@source '../../packages/webchat-react/src/**/*.{ts,tsx}';
+
 /* Klassenbasierter Dark-Mode: .dark am <html> schaltet um (Layout-Inline-Skript). */
 @custom-variant dark (&:is(.dark *));
 

@@ -3,3 +3,6 @@ hostname: firstdorsal.eu
 # Das Image baut und pusht die GitHub-Pipeline (.github/workflows/build.yml).
 image: ghcr.io/firstdorsal/firstdorsal-web
 tag: latest
+# Whisper-Modell für die Sprachnachrichten-Transkription (CPU, keine GPU
+# auf turing): large-v3-turbo für Qualität, medium als sparsamere Option.
+whisperModel: large-v3-turbo

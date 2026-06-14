@@ -1,0 +1,58 @@
+# Wiederverwendbarer Chat-Backend-Dienst (markenneutral „webchat").
+# Bibliothek + dünnes Binary: axum-API/WebSocket für Magic-Link-Chat,
+# Uploads, Whisper-Transkription und WebRTC-Signalisierung; optional
+# liefert er ein statisches Frontend (STATIC_DIR) gleich mit aus.
+[package]
+name = "webchat"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Bibliothek (einbindbar in andere Projekte) + dünnes Binary darüber.
+[lib]
+name = "webchat"
+path = "src/lib.rs"
+
+[[bin]]
+name = "webchat"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", features = ["ws", "macros", "multipart"] }
+base64 = "0.22"
+hmac = "0.12"
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls-tls",
+] }
+rand = "0.9"
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "multipart",
+    "rustls-tls",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha1 = "0.10"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = [
+    "macros",
+    "migrate",
+    "runtime-tokio",
+    "sqlite",
+] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["compression-full", "fs", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+# Kleines, schnelles Binary für das scratch-Image.
+lto = true
+strip = true

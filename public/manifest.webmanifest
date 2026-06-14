@@ -1,0 +1,25 @@
+{
+  "name": "firstdorsal IT-Dienstleistungen",
+  "short_name": "firstdorsal",
+  "description": "Softwareentwicklung, IT-Forensik sowie Betrieb & Infrastruktur aus Augsburg – mit direktem Chat-Draht.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e5",
+  "theme_color": "#f4f0e5",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

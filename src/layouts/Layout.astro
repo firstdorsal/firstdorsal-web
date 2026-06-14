@@ -17,6 +17,8 @@ interface Props {
   // hreflang-Alternates gerendert (nur für Seiten, die es in beiden
   // Sprachen gibt).
   alternates?: { de: string; en: string }
+  // Seite aus Suchmaschinen heraushalten (z. B. Chat-Verwaltung).
+  noindex?: boolean
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   description = 'firstdorsal IT-Dienstleistungen, Augsburg – Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur.',
   lang = 'de',
   alternates,
+  noindex = false,
 } = Astro.props
 
 // Absolute URLs für Canonical und Social-Media-Vorschauen (Discord, Signal
@@ -39,6 +42,18 @@ const ogImage = new URL('/og.png', Astro.site)
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- PWA: installierbar, Offline-Verhalten im Service Worker (sw.js). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta
+      name="theme-color"
+      content="#f4f0e5"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1b1714"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="canonical" href={canonical} />
     {
       alternates && (
@@ -64,6 +79,7 @@ const ogImage = new URL('/og.png', Astro.site)
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <!-- Die Seite bringt ihren eigenen Dark Mode mit – Dark Reader soll
          nicht zusätzlich umfärben. -->
     <meta name="darkreader-lock" />
@@ -90,6 +106,12 @@ const ogImage = new URL('/og.png', Astro.site)
         stored === 'dark' ||
         (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
       document.documentElement.classList.toggle('dark', dark)
+      // PWA-Service-Worker erst nach dem Laden registrieren (unkritisch).
+      if ('serviceWorker' in navigator) {
+        addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {})
+        })
+      }
     </script>
   </head>
   <body>

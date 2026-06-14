@@ -22,3 +22,12 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Rust-Backend
+server/target/
+server/data/
+
+# E2E (Playwright)
+e2e/.tmp/
+test-results/
+playwright-report/
