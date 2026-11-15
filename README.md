@@ -1,6 +1,6 @@
 # firstdorsal-web
 
-Gewerbe-Website von **firstdorsal IT-Dienstleistungen** (Paul Colin Hennig).
+Gewerbe-Website von **firstdorsal Creative Technology** (Paul Colin Hennig).
 
 ## Gestaltungskonzept „Anatomische Tafel"
 
@@ -20,7 +20,7 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 ## Stack
 
 - **Astro 6** (statische Ausgabe, kein unnötiges JS)
-- **React** als Inseln über `@astrojs/react` – nur für interaktive Teile (Theme-Toggle);
+- **React** als Inseln über `@astrojs/react` – nur für interaktive Teile (Theme-Toggle, Kontakt-Sektion);
   shadcn-Komponenten werden ansonsten statisch gerendert
 - **Tailwind v4** (`@tailwindcss/vite`) + **shadcn/ui** (Style „new-york", lucide)
 - **Schriften lokal, kein CDN:** Fraunces (Display/Anmerkungen) und Libre Franklin
@@ -31,7 +31,25 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 - **Motion:** Hero rein per CSS-Keyframes (`anim-rise`), Scroll-Einblendungen per
   IntersectionObserver (`.reveal`, nur bei `html.js`, respektiert
   `prefers-reduced-motion`)
-- **Tests:** Vitest + Testing-Library
+- **Tests:** Vitest + Testing-Library. Die Seitentests (`src/test/anfrage.test.ts`)
+  rendern echte Seiten über die Astro-Container-API in der node-Umgebung; das
+  Layout ersetzt dort ein Stub (`src/test/stubs/Layout.astro`), weil der Container
+  kein `Astro.site` kennt. Das echte HTML prüft `scripts/pruefe-ausgabe.mjs` nach
+  dem Build (robots-Meta, Sitemap, Postfächer) – im Image-Build als eigener Schritt.
+
+## Anzeigen-Landingpage `/anfrage`
+
+Ziel-URL der Google-Anzeigen (`https://firstdorsal.eu/anfrage/`). Inhaltlich die
+Startseite (`components/Startseite.astro`), aber mit `anfrage@` statt `mail@`:
+Mails an diese Adresse zählen als Anzeigen-Leads. Gemessen wird ohne Pixel, Cookie
+oder Google-Tag, also ohne Einwilligungsbanner. Regeln:
+
+- `anfrage@` steht nur auf dieser Seite, `mail@` nie dort. Der Logo-Link bleibt auf
+  der Seite, der Sprachumschalter fehlt. Impressum und Datenschutz bleiben verlinkt
+  und zeigen `mail@`; Anfragen von dort zählen nicht als Anzeige.
+- `noindex` am Layout und nicht in der Sitemap (`lib/indexierung.mjs`). Kein
+  Disallow in `robots.txt`, sonst sähe der Crawler das `noindex` nicht.
+- Beide Adressen landen über ein Catch-all im selben Postfach (`lib/mail.ts`).
 
 ## Build & Deployment
 
@@ -59,6 +77,7 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 | `pnpm build`    | Statische Seite nach `./dist/` bauen           |
 | `pnpm preview`  | Produktions-Build lokal ansehen                |
 | `pnpm test`     | Vitest-Tests einmalig ausführen                |
+| `pnpm pruefe-ausgabe` | Gebautes HTML in `./dist/` prüfen (nach `pnpm build`) |
 
 ## Struktur
 
@@ -66,7 +85,15 @@ einer alten anatomischen Zeichnung. Die Gestaltung greift das auf:
 src/
 ├── layouts/Layout.astro          Grundgerüst, Fonts, Anti-Flicker-Theme-Skript,
 │                                 Textur-Ebene, Reveal-Skript
-├── pages/index.astro             Landingpage (Header/Nav, Sektionen, Footer)
+├── pages/index.astro             Startseite (deutsch) mit strukturierten Daten
+├── pages/en/index.astro          Startseite (englisch)
+├── pages/anfrage.astro           Anzeigen-Landingpage (noindex, anfrage@)
+├── pages/impressum.astro         Impressum
+├── pages/datenschutz.astro       Datenschutzerklärung
+├── lib/betreiber.ts              Name und Anschrift – eine Quelle für alle Seiten
+├── lib/mail.ts                   Mail-Adressen, zur Laufzeit zusammengesetzt
+├── lib/indexierung.mjs           Anzeigen-Pfad, noindex-Liste, Sitemap-Filter
+├── test/                         Seitentests und Layout-Stub
 ├── components/
 │   ├── Hero.tsx                  Hero mit Wirbelsäulen-Illustration (statisch)
 │   ├── SpineIllustration.tsx     Stilisierte Tafel „Abb. 1" (statisch)
@@ -74,7 +101,9 @@ src/
 │   ├── SectionHeading.tsx        Nummerierte Abschnittsköpfe („1 – …")
 │   ├── Leistungen.tsx            Leistungs-Tafeln I–III (statisch)
 │   ├── Vorgehen.tsx              Ablauf als Wirbelsäule, Anamnese→Nachsorge
-│   ├── Kontakt.tsx               Konsultations-/Kontakt-Sektion (statisch)
+│   ├── Startseite.astro          Inhalt der Startseite (Header, Sektionen, Footer)
+│   ├── Kontakt.tsx               Kontakt-Sektion (React-Insel, client:load:
+│   │                             MailLink und CopyMail setzen die Adresse im Browser)
 │   ├── ModeToggle.tsx            Theme-Umschalter (React-Insel, client:load)
 │   └── ui/                       shadcn-Komponenten (button, card)
 ├── styles/global.css             Tailwind v4, Tafel-Theme, Texturen, Animationen

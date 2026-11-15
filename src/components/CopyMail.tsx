@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, Copy } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { mailAdresse } from '@/lib/mail'
+import { mailAdresse, type Postfach } from '@/lib/mail'
 import type { Lang } from '@/lib/i18n'
 
 const texte = {
@@ -25,15 +25,17 @@ const texte = {
 export function CopyMail({
   variant = 'outline',
   lang = 'de',
+  postfach,
 }: {
   variant?: 'outline' | 'ghost'
   lang?: Lang
+  postfach: Postfach
 }) {
   const t = texte[lang]
   const [kopiert, setKopiert] = useState(false)
 
   const kopieren = async () => {
-    const mail = mailAdresse()
+    const mail = mailAdresse(postfach)
     let ok = false
     try {
       await navigator.clipboard.writeText(mail)

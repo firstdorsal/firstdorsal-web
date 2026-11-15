@@ -7,6 +7,7 @@ import '@fontsource-variable/fraunces/standard-italic.css'
 import '@fontsource-variable/libre-franklin'
 import '../styles/global.css'
 
+import { BETREIBER } from '@/lib/betreiber'
 import type { Lang } from '@/lib/i18n'
 
 interface Props {
@@ -17,13 +18,16 @@ interface Props {
   // hreflang-Alternates gerendert (nur für Seiten, die es in beiden
   // Sprachen gibt).
   alternates?: { de: string; en: string }
+  // Seite aus Suchmaschinen heraushalten (z. B. die Anzeigen-Landingpage).
+  noindex?: boolean
 }
 
 const {
-  title = 'firstdorsal · IT-Dienstleistungen',
-  description = 'firstdorsal IT-Dienstleistungen, Augsburg – Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur.',
+  title = BETREIBER.name,
+  description = `${BETREIBER.name}, ${BETREIBER.ort} – Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur.`,
   lang = 'de',
   alternates,
+  noindex = false,
 } = Astro.props
 
 // Absolute URLs für Canonical und Social-Media-Vorschauen (Discord, Signal
@@ -64,6 +68,7 @@ const ogImage = new URL('/og.png', Astro.site)
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <!-- Die Seite bringt ihren eigenen Dark Mode mit – Dark Reader soll
          nicht zusätzlich umfärben. -->
     <meta name="darkreader-lock" />
@@ -71,7 +76,7 @@ const ogImage = new URL('/og.png', Astro.site)
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="firstdorsal IT-Dienstleistungen" />
+    <meta property="og:site_name" content={BETREIBER.name} />
     <meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />

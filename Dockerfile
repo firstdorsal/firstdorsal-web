@@ -21,8 +21,11 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 COPY astro.config.mjs tsconfig.json components.json vitest.config.ts ./
 COPY public public
 COPY src src
+COPY scripts scripts
 RUN pnpm test
 RUN pnpm build
+# Prüft das gebaute HTML (robots-Meta, Sitemap, Postfächer).
+RUN pnpm pruefe-ausgabe
 
 FROM docker.io/joseluisq/static-web-server:${SWS_VERSION}${RUNTIME_FLAVOR}
 COPY sws.toml /etc/sws.toml

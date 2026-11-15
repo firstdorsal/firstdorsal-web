@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro'
+import Startseite from '@/components/Startseite.astro'
+import { ANZEIGEN_PFAD } from '@/lib/indexierung.mjs'
+
+// Ziel-URL der Google-Anzeigen: die Startseite mit anfrage@ statt mail@
+// (Messung ohne Pixel, siehe lib/mail.ts).
+//
+// `noindex`: Fände man die Seite über die organische Suche, zählten diese
+// Anfragen fälschlich als Anzeigen-Leads. Kein Disallow in robots.txt – sonst
+// sähe der Crawler das `noindex` nicht. Keine hreflang-Alternates und kein
+// Sprachumschalter: Die Anzeigen laufen nur auf Deutsch.
+---
+
+<Layout lang="de" noindex>
+  <Startseite
+    lang="de"
+    postfach="anfrage"
+    logoHref={ANZEIGEN_PFAD}
+    sprachwechsel={false}
+  />
+</Layout>

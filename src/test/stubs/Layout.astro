@@ -1,0 +1,12 @@
+---
+// Ersatz für src/layouts/Layout.astro in Seitentests (anfrage.test.ts).
+// Das echte Layout baut Canonical und og:image aus `Astro.site`, das der
+// Container-API von Astro nicht setzen kann (`createManifest` übernimmt kein
+// `site`). Der Stub rendert nur den Slot und legt die Props offen, damit der
+// Test sie trotzdem prüfen kann.
+const { noindex = false, lang = 'de' } = Astro.props
+---
+
+<html lang={lang} data-noindex={String(noindex)}>
+  <body><slot /></body>
+</html>

@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
+    "pruefe-ausgabe": "node scripts/pruefe-ausgabe.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {

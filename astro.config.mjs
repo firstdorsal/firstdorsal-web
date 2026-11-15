@@ -6,6 +6,8 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
+import { istIndexierbar } from './src/lib/indexierung.mjs';
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://firstdorsal.eu',
@@ -13,7 +15,10 @@ export default defineConfig({
     defaultLocale: 'de',
     locales: ['de', 'en'],
   },
-  integrations: [react(), sitemap()],
+  integrations: [
+    react(),
+    sitemap({ filter: istIndexierbar }),
+  ],
 
   vite: {
     plugins: [tailwindcss()],

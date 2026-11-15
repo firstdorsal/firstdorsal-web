@@ -1,0 +1,38 @@
+---
+// Inhalt der Startseite. Die deutsche und englische Startseite und die
+// Anzeigen-Landingpage rendern denselben Inhalt; eine neue Sektion erreicht
+// damit automatisch alle drei. Pro Seite bleiben nur Layout-Angaben
+// (Titel, hreflang, noindex) und die strukturierten Daten.
+import SiteHeader from '@/components/SiteHeader.astro'
+import SiteFooter from '@/components/SiteFooter.astro'
+import { Hero } from '@/components/Hero'
+import { Leistungen } from '@/components/Leistungen'
+import { Vorgehen } from '@/components/Vorgehen'
+import { Referenzen } from '@/components/Referenzen'
+import { Kontakt } from '@/components/Kontakt'
+import type { Lang } from '@/lib/i18n'
+import type { Postfach } from '@/lib/mail'
+
+interface Props {
+  lang: Lang
+  postfach: Postfach
+  logoHref?: string
+  sprachwechsel?: boolean
+}
+
+const { lang, postfach, logoHref, sprachwechsel } = Astro.props
+---
+
+<div class="min-h-svh bg-background text-foreground">
+  <SiteHeader lang={lang} logoHref={logoHref} sprachwechsel={sprachwechsel} />
+
+  <main>
+    <Hero lang={lang} />
+    <Leistungen lang={lang} />
+    <Vorgehen lang={lang} />
+    <Referenzen lang={lang} />
+    <Kontakt lang={lang} postfach={postfach} client:load />
+  </main>
+
+  <SiteFooter lang={lang} postfach={postfach} />
+</div>

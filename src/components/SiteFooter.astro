@@ -1,12 +1,15 @@
 ---
 import MailText from '@/components/MailText.astro'
 import type { Lang } from '@/lib/i18n'
+import type { Postfach } from '@/lib/mail'
+import { BETREIBER } from '@/lib/betreiber'
 
 interface Props {
   lang?: Lang
+  postfach: Postfach
 }
 
-const { lang = 'de' } = Astro.props
+const { lang = 'de', postfach } = Astro.props
 
 // Impressum und Datenschutzerklärung sind deutsche Rechtstexte und werden
 // bewusst nicht übersetzt; die englische Seite verlinkt sie mit Hinweis.
@@ -30,8 +33,8 @@ const t = texte[lang]
     class="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
   >
     <p>
-      firstdorsal IT-Dienstleistungen ·
-      <MailText />
+      {BETREIBER.name} ·
+      <MailText postfach={postfach} />
     </p>
     <nav class="flex items-center gap-6" aria-label={t.rechtliches}>
       <a

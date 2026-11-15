@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { mailAdresse, mailtoHref } from '@/lib/mail'
+import { mailAdresse, mailtoHref, type Postfach } from '@/lib/mail'
 import type { Lang } from '@/lib/i18n'
 
 const texte = {
@@ -14,17 +14,23 @@ const texte = {
 // Browser; im servergerenderten HTML steht weder Adresse noch mailto.
 // Ohne JS führt der Link zur Kontakt-Sektion (dort steht die Adresse
 // entity-kodiert im Footer der Seite).
-export function MailLink({ lang = 'de' }: { lang?: Lang }) {
+export function MailLink({
+  lang = 'de',
+  postfach,
+}: {
+  lang?: Lang
+  postfach: Postfach
+}) {
   const [href, setHref] = useState<string>()
 
   useEffect(() => {
-    setHref(mailtoHref())
-  }, [])
+    setHref(mailtoHref(postfach))
+  }, [postfach])
 
   return (
     <Button size="lg" className="label-caps h-11 px-7 tracking-[0.18em]" asChild>
       <a href={href ?? '#kontakt'}>
-        {href ? mailAdresse() : texte[lang].platzhalter}
+        {href ? mailAdresse(postfach) : texte[lang].platzhalter}
         <ArrowRight />
       </a>
     </Button>

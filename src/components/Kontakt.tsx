@@ -1,6 +1,7 @@
 import { CopyMail } from '@/components/CopyMail'
 import { MailLink } from '@/components/MailLink'
 import type { Lang } from '@/lib/i18n'
+import type { Postfach } from '@/lib/mail'
 
 const texte = {
   de: {
@@ -28,7 +29,13 @@ const texte = {
 // Abschluss-Sektion: eine Konsultation statt eines Kontaktformulars.
 // Wegen des Kopieren-Buttons als Insel eingebunden (client:load in
 // den Seiten) – React ist durch den ModeToggle ohnehin geladen.
-export function Kontakt({ lang = 'de' }: { lang?: Lang }) {
+export function Kontakt({
+  lang = 'de',
+  postfach,
+}: {
+  lang?: Lang
+  postfach: Postfach
+}) {
   const t = texte[lang]
 
   return (
@@ -47,8 +54,8 @@ export function Kontakt({ lang = 'de' }: { lang?: Lang }) {
           {t.text}
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <MailLink lang={lang} />
-          <CopyMail lang={lang} />
+          <MailLink lang={lang} postfach={postfach} />
+          <CopyMail lang={lang} postfach={postfach} />
         </div>
         <p className="mt-8 font-mono text-xs text-muted-foreground">
           {t.fakten}

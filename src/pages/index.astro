@@ -1,49 +1,26 @@
 ---
 import Layout from '../layouts/Layout.astro'
-import SiteHeader from '@/components/SiteHeader.astro'
-import SiteFooter from '@/components/SiteFooter.astro'
-import { Hero } from '@/components/Hero'
-import { Leistungen } from '@/components/Leistungen'
-import { Vorgehen } from '@/components/Vorgehen'
-import { Referenzen } from '@/components/Referenzen'
-import { Kontakt } from '@/components/Kontakt'
+import Startseite from '@/components/Startseite.astro'
+import { BETREIBER, postanschrift } from '@/lib/betreiber'
 
 // Strukturierte Daten für die lokale Suche (Google: "IT-Dienstleister
 // Augsburg" etc.). Schema.org ProfessionalService mit Anschrift.
 const strukturierteDaten = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
-  name: 'firstdorsal IT-Dienstleistungen',
+  name: BETREIBER.name,
   url: 'https://firstdorsal.eu/',
   image: 'https://firstdorsal.eu/og.png',
   // Bewusst keine email-Eigenschaft: JSON-LD ist die einfachste Quelle
   // für Spam-Scraper.
   description:
     'Softwareentwicklung und kreatives Webdesign, IT-Forensik mit technischen Gutachten sowie Betrieb & Infrastruktur – aus Augsburg.',
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Imhofstraße 12',
-    postalCode: '86159',
-    addressLocality: 'Augsburg',
-    addressCountry: 'DE',
-  },
+  address: postanschrift,
 }
 ---
 
 <Layout lang="de" alternates={{ de: '/', en: '/en/' }}>
-  <div class="min-h-svh bg-background text-foreground">
-    <SiteHeader lang="de" />
-
-    <main>
-      <Hero lang="de" />
-      <Leistungen lang="de" />
-      <Vorgehen lang="de" />
-      <Referenzen lang="de" />
-      <Kontakt lang="de" client:load />
-    </main>
-
-    <SiteFooter lang="de" />
-  </div>
+  <Startseite lang="de" postfach="mail" />
 
   <script
     type="application/ld+json"

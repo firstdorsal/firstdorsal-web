@@ -1,50 +1,27 @@
 ---
 import Layout from '../../layouts/Layout.astro'
-import SiteHeader from '@/components/SiteHeader.astro'
-import SiteFooter from '@/components/SiteFooter.astro'
-import { Hero } from '@/components/Hero'
-import { Leistungen } from '@/components/Leistungen'
-import { Vorgehen } from '@/components/Vorgehen'
-import { Referenzen } from '@/components/Referenzen'
-import { Kontakt } from '@/components/Kontakt'
+import Startseite from '@/components/Startseite.astro'
+import { BETREIBER, postanschrift } from '@/lib/betreiber'
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
-  name: 'firstdorsal IT-Dienstleistungen',
+  name: BETREIBER.name,
   url: 'https://firstdorsal.eu/en/',
   image: 'https://firstdorsal.eu/og.png',
   description:
     'Software development and creative web design, IT forensics with technical expert reports, plus operations & infrastructure – based in Augsburg, Germany.',
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Imhofstraße 12',
-    postalCode: '86159',
-    addressLocality: 'Augsburg',
-    addressCountry: 'DE',
-  },
+  address: postanschrift,
 }
 ---
 
 <Layout
   lang="en"
-  title="firstdorsal · IT services"
-  description="firstdorsal IT services, Augsburg (Germany) – software development and creative web design, IT forensics with technical expert reports, plus operations & infrastructure."
+  title={BETREIBER.name}
+  description={`${BETREIBER.name}, Augsburg (Germany) – software development and creative web design, IT forensics with technical expert reports, plus operations & infrastructure.`}
   alternates={{ de: '/', en: '/en/' }}
 >
-  <div class="min-h-svh bg-background text-foreground">
-    <SiteHeader lang="en" />
-
-    <main>
-      <Hero lang="en" />
-      <Leistungen lang="en" />
-      <Vorgehen lang="en" />
-      <Referenzen lang="en" />
-      <Kontakt lang="en" client:load />
-    </main>
-
-    <SiteFooter lang="en" />
-  </div>
+  <Startseite lang="en" postfach="mail" />
 
   <script
     type="application/ld+json"

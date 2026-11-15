@@ -3,11 +3,12 @@ import Layout from '../layouts/Layout.astro'
 import SiteHeader from '@/components/SiteHeader.astro'
 import SiteFooter from '@/components/SiteFooter.astro'
 import MailText from '@/components/MailText.astro'
+import { BETREIBER } from '@/lib/betreiber'
 ---
 
 <Layout
   title="Impressum · firstdorsal"
-  description="Impressum der firstdorsal IT-Dienstleistungen, Augsburg."
+  description={`Impressum der ${BETREIBER.name}, ${BETREIBER.ort}.`}
 >
   <div class="min-h-svh bg-background text-foreground">
     <SiteHeader />
@@ -25,10 +26,10 @@ import MailText from '@/components/MailText.astro'
           Angaben gemäß § 5 DDG
         </h2>
         <p class="mt-4 leading-relaxed text-muted-foreground">
-          firstdorsal IT-Dienstleistungen<br />
-          Paul Colin Hennig<br />
-          Imhofstraße 12<br />
-          86159 Augsburg<br />
+          {BETREIBER.name}<br />
+          Inhaber: {BETREIBER.inhaber}<br />
+          {BETREIBER.strasse}<br />
+          {BETREIBER.plz} {BETREIBER.ort}<br />
           Deutschland
         </p>
       </section>
@@ -38,7 +39,7 @@ import MailText from '@/components/MailText.astro'
           Kontakt
         </h2>
         <p class="mt-4 leading-relaxed text-muted-foreground">
-          E-Mail: <MailText />
+          E-Mail: <MailText postfach="mail" />
         </p>
       </section>
 
@@ -47,7 +48,7 @@ import MailText from '@/components/MailText.astro'
           Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
         </h2>
         <p class="mt-4 leading-relaxed text-muted-foreground">
-          Paul Colin Hennig (Anschrift wie oben)
+          {BETREIBER.inhaber} (Anschrift wie oben)
         </p>
       </section>
 
@@ -63,6 +64,6 @@ import MailText from '@/components/MailText.astro'
       </section>
     </main>
 
-    <SiteFooter />
+    <SiteFooter postfach="mail" />
   </div>
 </Layout>

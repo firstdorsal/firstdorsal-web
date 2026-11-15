@@ -3,11 +3,12 @@ import Layout from '../layouts/Layout.astro'
 import SiteHeader from '@/components/SiteHeader.astro'
 import SiteFooter from '@/components/SiteFooter.astro'
 import MailText from '@/components/MailText.astro'
+import { BETREIBER } from '@/lib/betreiber'
 ---
 
 <Layout
   title="Datenschutzerklärung · firstdorsal"
-  description="Datenschutzerklärung der firstdorsal IT-Dienstleistungen, Augsburg – keine Cookies, kein Tracking, keine Drittanbieter."
+  description={`Datenschutzerklärung der ${BETREIBER.name}, ${BETREIBER.ort} – keine Cookies, kein Tracking, keine Drittanbieter.`}
 >
   <div class="min-h-svh bg-background text-foreground">
     <SiteHeader />
@@ -25,11 +26,11 @@ import MailText from '@/components/MailText.astro'
           1. Verantwortlicher
         </h2>
         <p class="mt-4 leading-relaxed text-muted-foreground">
-          firstdorsal IT-Dienstleistungen<br />
-          Paul Colin Hennig<br />
-          Imhofstraße 12<br />
-          86159 Augsburg<br />
-          E-Mail: <MailText />
+          {BETREIBER.name}<br />
+          Inhaber: {BETREIBER.inhaber}<br />
+          {BETREIBER.strasse}<br />
+          {BETREIBER.plz} {BETREIBER.ort}<br />
+          E-Mail: <MailText postfach="mail" />
         </p>
       </section>
 
@@ -86,7 +87,11 @@ import MailText from '@/components/MailText.astro'
           DSGVO). Die Daten werden gelöscht, sobald sie für die Bearbeitung
           nicht mehr erforderlich sind und keine gesetzlichen
           Aufbewahrungspflichten entgegenstehen. Eine Weitergabe an Dritte
-          findet nicht statt.
+          findet nicht statt. Auf der Zielseite unserer Suchmaschinenanzeigen
+          nennen wir eine eigene E-Mail-Adresse. Anhand der Empfängeradresse
+          zählen wir intern, wie viele Anfragen über diese Anzeigen kommen;
+          dafür setzen wir keine Cookies und keine Tracking-Technik ein
+          (Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO).
         </p>
       </section>
 
@@ -106,9 +111,9 @@ import MailText from '@/components/MailText.astro'
         </p>
       </section>
 
-      <p class="annotation mt-12 text-sm">Stand: Juni 2026</p>
+      <p class="annotation mt-12 text-sm">Stand: November 2026</p>
     </main>
 
-    <SiteFooter />
+    <SiteFooter postfach="mail" />
   </div>
 </Layout>
